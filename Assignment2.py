@@ -55,29 +55,14 @@ def V(data):
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     gpr = GaussianProcessRegressor(kernel=kernel)
     gpr.fit(data[:,0:2], data[:,2])
-<<<<<<< HEAD
-    #print('data[:,0:1]',data[:,0:2])
-
-=======
-
->>>>>>> a54702d813a58e41863b26ed9a925584ce007738
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
 
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
     Z = np.zeros((x2.size, x1.size))
-<<<<<<< HEAD
-
-    for (i,j),v in np.ndenumerate(z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
-    #print('Z',Z)
-
-=======
-
     for (i,j),v in np.ndenumerate(Z):
         Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
 
->>>>>>> a54702d813a58e41863b26ed9a925584ce007738
     # Create plot
     fig = plt.figure(figsize=(10,6))
     fig.suptitle('Gaussian Process Regression', fontsize=20)
