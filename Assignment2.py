@@ -84,24 +84,26 @@ def V(data):
 
 V(data)
 
+'''h() computes the attractiveness of the central point of a given zone of the map w.r.t. the starting point'''
+''' it outputs the central point and its value '''
 def h(zone,currentpoint,data,speed):
-    print('freeZone',zone)
+    #print('freeZone',zone)
     #x = np.zeros(1,2)
     x = [0., 0.]
-    '''create point in center of zone'''
-    x[0] = (zone[1][0] - zone[0][0]) / 2 #point between bottomRight and bottomLeft
-    x[1] = (zone[3][1] - zone[0][1]) / 2 #point between upLeft and bottomRight
+    '''create point in center of zone using [(x3,y3)-(x1,y1)]/2 + (x1,y1)'''
+    x[0] = (zone[2][0] - zone[0][0]) / 2 + zone[0][0]#point between bottomRight and bottomLeft
+    x[1] = (zone[2][1] - zone[0][1]) / 2 + zone[0][1]#point between upLeft and bottomRight
     '''evaluate point '''
     Z_pred = V(data)[99*int(x[0])][99*int(x[1])] #get predicted value of x from gaussian distribution
     
-    print('start',currentpoint)
+    #print('start',currentpoint)
     dist = math.sqrt((x[0]-currentpoint[0])**2 + (x[1]-currentpoint[1])**2)#ditância entre dado ponto e ponto actual onde se encontra o navio
     t_viagem = dist/speed
-    print('t_viagem',t_viagem)
-    print('Z_pred',Z_pred)
+    #print('t_viagem',t_viagem)
+    #print('Z_pred',Z_pred)
     lucro = max(Z_pred - t_viagem/100, 0 ) #max between 0 and profit, to avoid negative value
-    print('lucro',lucro)
-    return lucro
+    #print('lucro',lucro)
+    return [x, lucro]
 
 
 '''h([3,2],[0,0],1)'''
@@ -133,11 +135,15 @@ def removeZones2k(freeZonesList, positionsList):
             print(pos)
     return freeZonesList
 
+
+zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
+zones=[zone]
+'''avoid setting freeZones = zones, because alterations to freeZones might cause alterations to zones'''
+freeZones = [[[0.,0.],[1.,0.],[1.,1.],[0.,1.]]] #initially no zone has been explored
+
+
 if __name__ == "__main__":
     
-    zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
-    zones=[zone]
-    freeZones = zones #initially no zone has been explored
 
     positions = data[:,0:2].tolist()
     profits = []
@@ -148,18 +154,27 @@ if __name__ == "__main__":
     i=0
     while i < T:
         profit = 0
+        
         if freeZones == []:
+            print('Zonas pre split', zones)
             zones = splitZones(zones)
-            print(zones)
+            print('Zonas pos split',zones)
             freeZones = zones
         for freeZone in freeZones:#define number of points to search beforehand
-            if profit < h(freeZone,start,data,speed):#user np.any if ncessary
-                profit = h(freeZone,start,data,speed)
-                chosen = zone #this means this candidate is chosen and therefore will be next starting point
-                print('data',data)
-
+            if profit < h(freeZone,start,data,speed)[1]:#user np.any if ncessary
+                profit = h(freeZone,start,data,speed)[1]
+                print('profit',profit)
+                chosenZone = freeZone #this means this zone is chosen
+                print('chosenZone',chosenZone)
+                chosenPoint = h(freeZone,start,data,speed)[0]
+                print('chosenPoint',chosenPoint)
+                #print('data',data)
+        freeZones.remove(chosenZone) #remove chosenZone
+        #print('freeZones',freeZones)
+        '''freeZones = removeZones2k(free)'''
         # data = np.append(data,[[start[0],start[1],V(data)[start[0]][start[1]]]],axis=0)
-        positions.append(chosen) #save chosen points for probing
+        positions.append(chosenPoint) #save chosen points for probing
+        print('positions',positions[len(data):])
         profits.append(profit) #save each expected profit
         i+=1
     print('Positions',positions)
