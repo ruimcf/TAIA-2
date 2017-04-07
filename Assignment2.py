@@ -82,13 +82,18 @@ def V(data):
 
     return Z
 
-#V(data)
+V(data)
 
 def h(zone,currentpoint,data,speed):
-    x = np.zeros((1,2))
-    x[0] = (zone[1][0] - zone[0][0]) / 2
-    x[1] = (zone[2][1] - zone[1][1]) / 2
+    print('freeZone',zone)
+    #x = np.zeros(1,2)
+    x = [0., 0.]
+    '''create point in center of zone'''
+    x[0] = (zone[1][0] - zone[0][0]) / 2 #point between bottomRight and bottomLeft
+    x[1] = (zone[3][1] - zone[0][1]) / 2 #point between upLeft and bottomRight
+    '''evaluate point '''
     Z_pred = V(data)[99*int(x[0])][99*int(x[1])] #get predicted value of x from gaussian distribution
+    
     print('start',currentpoint)
     dist = math.sqrt((x[0]-currentpoint[0])**2 + (x[1]-currentpoint[1])**2)#ditância entre dado ponto e ponto actual onde se encontra o navio
     t_viagem = dist/speed
@@ -102,10 +107,6 @@ def h(zone,currentpoint,data,speed):
 '''h([3,2],[0,0],1)'''
 
 '''Prepare expediction'''
-
-zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]]
-zones=[zone]
-freeZones = zones
 
 def splitZones(zonesList):
     newZonesList = []
@@ -132,8 +133,12 @@ def removeZones2k(freeZonesList, positionsList):
             print(pos)
     return freeZonesList
 
-'''
 if __name__ == "__main__":
+    
+    zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
+    zones=[zone]
+    freeZones = zones #initially no zone has been explored
+
     positions = data[:,0:2].tolist()
     profits = []
     start = [0,0]
@@ -145,6 +150,7 @@ if __name__ == "__main__":
         profit = 0
         if freeZones == []:
             zones = splitZones(zones)
+            print(zones)
             freeZones = zones
         for freeZone in freeZones:#define number of points to search beforehand
             if profit < h(freeZone,start,data,speed):#user np.any if ncessary
@@ -153,10 +159,9 @@ if __name__ == "__main__":
                 print('data',data)
 
         # data = np.append(data,[[start[0],start[1],V(data)[start[0]][start[1]]]],axis=0)
-        positions.append(candidate) #save chosen points for probing
+        positions.append(chosen) #save chosen points for probing
         profits.append(profit) #save each expected profit
         i+=1
     print('Positions',positions)
     print('Profits',profits)
-'''
 
