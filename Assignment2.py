@@ -82,13 +82,13 @@ def V(data):
 
     return Z
 
-V(data)
+#V(data)
 
 def h(zone,currentpoint,data,speed):
     x = np.zeros((1,2))
     x[0] = (zone[1][0] - zone[0][0]) / 2
     x[1] = (zone[2][1] - zone[1][1]) / 2
-    Z_pred = V(data)[x[0]][x[1]] #get predicted value of x from gaussian distribution
+    Z_pred = V(data)[99*int(x[0])][99*int(x[1])] #get predicted value of x from gaussian distribution
     print('start',currentpoint)
     dist = math.sqrt((x[0]-currentpoint[0])**2 + (x[1]-currentpoint[1])**2)#ditância entre dado ponto e ponto actual onde se encontra o navio
     t_viagem = dist/speed
@@ -101,7 +101,7 @@ def h(zone,currentpoint,data,speed):
 
 '''h([3,2],[0,0],1)'''
 
-'''Expediction'''
+'''Prepare expediction'''
 
 zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]]
 zones=[zone]
@@ -128,10 +128,11 @@ def splitZones(zonesList):
 
 def removeZones2k(freeZonesList, positionsList):
     for zone in freeZonesList:
-        for pos in positionsList:
-            #check if pos inside zone, if yes, remove from list
+        for pos in positionsList:#check if pos inside zone, if yes, remove from list
+            print(pos)
     return freeZonesList
 
+'''
 if __name__ == "__main__":
     positions = data[:,0:2].tolist()
     profits = []
@@ -157,5 +158,5 @@ if __name__ == "__main__":
         i+=1
     print('Positions',positions)
     print('Profits',profits)
-
+'''
 
