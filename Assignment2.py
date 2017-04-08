@@ -4,6 +4,8 @@ Created on Thu Mar 23 11:49:22 2017
 
 @author: Pepe
 """
+import copy
+
 import math
 import numpy as np
 from sklearn import linear_model
@@ -62,24 +64,6 @@ def V(data):
     Z = np.zeros((x2.size, x1.size))
     for (i,j),v in np.ndenumerate(Z):
         Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
-
-    # Create plot
-    fig = plt.figure(figsize=(10,6))
-    fig.suptitle('Gaussian Process Regression', fontsize=20)
-
-    ax = axes3d.Axes3D(fig)
-
-    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
-    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
-
-    ax.set_xlabel('x')
-    ax.set_xlim(0,1)
-    ax.set_ylabel('y')
-    ax.set_ylim(ymin=0)
-    ax.set_zlabel('z');
-
-    plt.show()
-
     return Z
 
 V(data)
@@ -156,18 +140,18 @@ if __name__ == "__main__":
         profit = 0
         
         if freeZones == []:
-            print('Zonas pre split', zones)
+            #print('Zonas pre split', zones)
             zones = splitZones(zones)
-            print('Zonas pos split',zones)
-            freeZones = zones
+            #print('Zonas pos split',zones)
+            freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
         for freeZone in freeZones:#define number of points to search beforehand
             if profit < h(freeZone,start,data,speed)[1]:#user np.any if ncessary
                 profit = h(freeZone,start,data,speed)[1]
-                print('profit',profit)
+                #print('profit',profit)
                 chosenZone = freeZone #this means this zone is chosen
-                print('chosenZone',chosenZone)
+                #print('chosenZone',chosenZone)
                 chosenPoint = h(freeZone,start,data,speed)[0]
-                print('chosenPoint',chosenPoint)
+                #print('chosenPoint',chosenPoint)
                 #print('data',data)
         freeZones.remove(chosenZone) #remove chosenZone
         #print('freeZones',freeZones)
