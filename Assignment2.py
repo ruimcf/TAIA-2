@@ -64,6 +64,23 @@ def V(data):
     Z = np.zeros((x2.size, x1.size))
     for (i,j),v in np.ndenumerate(Z):
         Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+    '''# Create plot
+    fig = plt.figure(figsize=(10,6))
+    fig.suptitle('Gaussian Process Regression', fontsize=20)
+    
+    ax = axes3d.Axes3D(fig)
+    
+    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
+    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
+    
+    ax.set_xlabel('x')
+    ax.set_xlim(0,1)
+    ax.set_ylabel('y')
+    ax.set_ylim(ymin=0)
+    ax.set_zlabel('z');
+    
+    plt.show()
+    '''
     return Z
 
 V(data)
@@ -97,15 +114,23 @@ def h(zone,currentpoint,data,speed):
 def splitZones(zonesList):
     newZonesList = []
     for zone in zonesList:
-        downLeft = zone[0]
-        downRight = zone[1]
-        upRight = zone[2]
-        upLeft = zone[3]
+        DownLeft = zone[0]
+        DownRight = zone[1]
+        UpRight = zone[2]
+        UpLeft = zone[3]
+        
+        midDown = [(DownRight[0] - DownLeft[0])/2 + DownLeft[0], (DownRight[1] - DownLeft[1])/2 + DownLeft[1]]
+        midRight = [(UpRight[0] - DownRight[0])/2 + DownRight[0], (UpRight[1] - DownRight[1])/2 + DownRight[1]]
+        midUp = [(UpLeft[0] - UpRight[0])/2 + UpRight[0], (UpLeft[1] - UpRight[1])/2 + UpRight[1]]
+        midLeft = [(DownLeft[0] - UpLeft[0])/2 + UpLeft[0], (DownLeft[1] - UpLeft[1])/2 + UpLeft[1]]
+        center = [(UpRight[0] - DownLeft[0])/2 + DownLeft[0], (UpRight[0] - DownLeft[0])/2 + DownLeft[0]]
+        '''
         midDown = [(downRight[0] - downLeft[0])/2, downRight[1]]
         midRight = [upRight[0], (upRight[1] - downRight[1])/2]
         midUp = [(upRight[0] - upLeft[0])/2, upRight[1]]
         midLeft = [upLeft[0], (upLeft[1] - downLeft[1])/2]
         center = [midDown[0], midLeft[1]]
+        '''
         newZonesList.append([downLeft, midDown, center, midLeft])
         newZonesList.append([midDown, downRight, midRight, center])
         newZonesList.append([center, midRight, upRight, midUp])
@@ -118,6 +143,23 @@ def removeZones2k(freeZonesList, positionsList):
         for pos in positionsList:#check if pos inside zone, if yes, remove from list
             print(pos)
     return freeZonesList
+
+'''StopDiving should say if the division in zones made so far already accounts for freeZones or not'''
+def StopDividing(data,zones):
+    point_in_zone = []
+    for zone in zones:
+        for point in data:
+            '''if point inside zone:'''
+            if zone[0][0] < point[0] and zone[1][0] > point[0] and zone[0][1] < point[1] and zone[2][1] > point[1]:
+                point_in_zone.append(point)
+                
+        if point_in_zone == []: #if number of points in zone is zero, after all points of data have been tested, then return True
+            print('zone',zone)
+            print('stop dividing')
+            return True #this means it is OK to stop dividing
+    print('continue dividing')
+    return False #in the end of testing for all zones, since there is none with zero points, then return False (continue dividing)
+
 
 
 zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
@@ -140,16 +182,18 @@ if __name__ == "__main__":
         profit = 0
         
         if freeZones == []:
-            #print('Zonas pre split', zones)
-            zones = splitZones(zones)
-            #print('Zonas pos split',zones)
+            print('StopDividing',StopDividing(data,zones))
+            while StopDividing(data,zones) is False:
+                print('Zonas pre split', zones)
+                zones = splitZones(zones)
+                #print('Zonas pos split',zones)
             freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
         for freeZone in freeZones:#define number of points to search beforehand
             if profit < h(freeZone,start,data,speed)[1]:#user np.any if ncessary
                 profit = h(freeZone,start,data,speed)[1]
-                #print('profit',profit)
+                print('profit',profit)
                 chosenZone = freeZone #this means this zone is chosen
-                #print('chosenZone',chosenZone)
+                print('chosenZone',chosenZone)
                 chosenPoint = h(freeZone,start,data,speed)[0]
                 #print('chosenPoint',chosenPoint)
                 #print('data',data)
@@ -158,7 +202,7 @@ if __name__ == "__main__":
         '''freeZones = removeZones2k(free)'''
         # data = np.append(data,[[start[0],start[1],V(data)[start[0]][start[1]]]],axis=0)
         positions.append(chosenPoint) #save chosen points for probing
-        print('positions',positions[len(data):])
+        #print('positions',positions[len(data):])
         profits.append(profit) #save each expected profit
         i+=1
     print('Positions',positions)
