@@ -168,8 +168,12 @@ def FreeZones(data,zones):
         
     for i in zones:
         if i not in zones_with_points:
+            print('free zone in function',i)
             freeZones.append(i)
-        
+    '''if all zones have points, return []'''
+    if len(zones_with_points) == len(zones):
+        return []
+    
     return [freeZones, zones_with_points]
               
     
@@ -196,10 +200,10 @@ if __name__ == "__main__":
         profit = 0
         if freeZones == []:
             #print('StopDividing',StopDividing(data,zones))
-            while StopDividing(data,zones) is False:
-                print('Zonas pre split', zones)
-                zones = splitZones(zones)
-                print('Zonas pos split',zones)
+            #while StopDividing(data,zones) is False:
+            print('Zonas pre split', zones)
+            zones = splitZones(zones)
+            print('Zonas pos split',zones)
             #freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
             freeZones = FreeZones(data,zones)[0]
             print('freeZones', freeZones)
@@ -217,6 +221,8 @@ if __name__ == "__main__":
             print('freeZones', freeZones)
             #print('chosenZone',chosenZone)
             chosenPoint = h(freeZone,start,data,speed)[0]
+            if chosenPoint == positions[-1]:
+                break
             positions.append(chosenPoint) #save chosen points for probing
                 #print('chosenPoint',chosenPoint)
                 #print('data',data)
