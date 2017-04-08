@@ -28,7 +28,7 @@ y_surf=np.arange(0, 1, 0.01)
 x_surf, y_surf = np.meshgrid(x_surf, y_surf)
 z_surf = g(x_surf,y_surf)
 ax.plot_surface(x_surf, y_surf, z_surf, cmap=cm.hot);    # plot a 3d surface plot
-N = 100
+N = 1
 #X = np.zeros((N,2))
 #y = np.zeros((N))
 data = np.zeros((N,3))#in the form array[[x1,y1,z1],...,[xn,yn,zn]]
@@ -55,7 +55,7 @@ def V(data):
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-    gpr = GaussianProcessRegressor(kernel=kernel)
+    gpr = GaussianProcessRegressor()
     gpr.fit(data[:,0:2], data[:,2])
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
@@ -63,24 +63,7 @@ def V(data):
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
     Z = np.zeros((x2.size, x1.size))
     for (i,j),v in np.ndenumerate(Z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
-    '''# Create plot
-    fig = plt.figure(figsize=(10,6))
-    fig.suptitle('Gaussian Process Regression', fontsize=20)
-    
-    ax = axes3d.Axes3D(fig)
-    
-    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
-    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
-    
-    ax.set_xlabel('x')
-    ax.set_xlim(0,1)
-    ax.set_ylabel('y')
-    ax.set_ylim(ymin=0)
-    ax.set_zlabel('z');
-    
-    plt.show()
-    '''
+        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])    
     return Z
 
 V(data)
@@ -131,10 +114,10 @@ def splitZones(zonesList):
         midLeft = [upLeft[0], (upLeft[1] - downLeft[1])/2]
         center = [midDown[0], midLeft[1]]
         '''
-        newZonesList.append([downLeft, midDown, center, midLeft])
-        newZonesList.append([midDown, downRight, midRight, center])
-        newZonesList.append([center, midRight, upRight, midUp])
-        newZonesList.append([midLeft, center, midUp, upLeft])
+        newZonesList.append([DownLeft, midDown, center, midLeft])
+        newZonesList.append([midDown, DownRight, midRight, center])
+        newZonesList.append([center, midRight, UpRight, midUp])
+        newZonesList.append([midLeft, center, midUp, UpLeft])
 
     return newZonesList
 
@@ -154,12 +137,42 @@ def StopDividing(data,zones):
                 point_in_zone.append(point)
                 
         if point_in_zone == []: #if number of points in zone is zero, after all points of data have been tested, then return True
-            print('zone',zone)
-            print('stop dividing')
+            #print('zone',zone)
+            #print('stop dividing')
             return True #this means it is OK to stop dividing
-    print('continue dividing')
+    #print('continue dividing')
     return False #in the end of testing for all zones, since there is none with zero points, then return False (continue dividing)
 
+'''FreeZones(data,zones) returns a list of zones that are free given data and zones'''
+def FreeZones(data,zones):
+    freeZones = []
+    zones_with_points = []
+    nrZones = len(zones)
+    zoneSide = 1./math.sqrt(nrZones)
+    '''assign for each point a zone without iterating through each zone: '''
+    for point in data:
+        x_projection_proportion = point[0]/zoneSide #valor que ajudará a encontrar a posição horizontal da zona do ponto
+        y_projection_proportion = point[1]/zoneSide #valor que ajudará a encontrar a posição vertical da zona do ponto
+        #print('number of zones',nrZones)
+        for i in range(int(math.sqrt(nrZones))):
+            if i < x_projection_proportion and i+1 > x_projection_proportion:
+                for j in range(int(math.sqrt(nrZones))):
+                    if j < y_projection_proportion and j+1 > y_projection_proportion:
+                        '''obter cada ponto da zona encontrada usando a proporcao das projeccoes do ponto'''
+                        p1 = [i*zoneSide, j*zoneSide]
+                        p2 = [(i+1)*zoneSide, j*zoneSide]
+                        p3 = [(i+1)*zoneSide, (j+1)*zoneSide]
+                        p4 = [i*zoneSide, (j+1)*zoneSide]
+                        correspondingZone = [p1,p2,p3,p4]
+        zones_with_points.append(correspondingZone)
+        
+    for i in zones:
+        if i not in zones_with_points:
+            freeZones.append(i)
+        
+    return [freeZones, zones_with_points]
+              
+    
 
 
 zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
@@ -178,33 +191,80 @@ if __name__ == "__main__":
     t=2
     T=10
     i=0
+    
     while i < T:
         profit = 0
-        
         if freeZones == []:
-            print('StopDividing',StopDividing(data,zones))
+            #print('StopDividing',StopDividing(data,zones))
             while StopDividing(data,zones) is False:
                 print('Zonas pre split', zones)
                 zones = splitZones(zones)
-                #print('Zonas pos split',zones)
-            freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
+                print('Zonas pos split',zones)
+            #freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
+            freeZones = FreeZones(data,zones)[0]
+            print('freeZones', freeZones)
+            print('zones with points', FreeZones(data,zones)[1])
+        '''visitar todas as freezones '''
         for freeZone in freeZones:#define number of points to search beforehand
-            if profit < h(freeZone,start,data,speed)[1]:#user np.any if ncessary
-                profit = h(freeZone,start,data,speed)[1]
-                print('profit',profit)
-                chosenZone = freeZone #this means this zone is chosen
-                print('chosenZone',chosenZone)
-                chosenPoint = h(freeZone,start,data,speed)[0]
+            #print(len(freeZones))
+            #print('chegou aqui')
+            #if profit < h(freeZone,start,data,speed)[1]:#user np.any if ncessary
+            profit = h(freeZone,start,data,speed)[1]
+            profits.append(profit) #save each expected profit
+            #print('profit',profit)
+            chosenZone = freeZone #this means this zone is chosen
+            freeZones.remove(chosenZone) #remove chosenZone
+            print('freeZones', freeZones)
+            #print('chosenZone',chosenZone)
+            chosenPoint = h(freeZone,start,data,speed)[0]
+            positions.append(chosenPoint) #save chosen points for probing
                 #print('chosenPoint',chosenPoint)
                 #print('data',data)
-        freeZones.remove(chosenZone) #remove chosenZone
         #print('freeZones',freeZones)
         '''freeZones = removeZones2k(free)'''
         # data = np.append(data,[[start[0],start[1],V(data)[start[0]][start[1]]]],axis=0)
-        positions.append(chosenPoint) #save chosen points for probing
+        
         #print('positions',positions[len(data):])
-        profits.append(profit) #save each expected profit
+        
         i+=1
     print('Positions',positions)
     print('Profits',profits)
 
+def FinalEstimation(F, data):
+    data = data_with_true_values
+    for i in range(len(data)):
+        data[i,2] = F(data[i,0],data[i,1])
+        
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+    
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    gpr = GaussianProcessRegressor()
+    gpr.fit(data[:,0:2], data[:,2])
+    x1 = np.linspace(0,1.01,100)
+    x2 = np.linspace(0,1.01,100)
+
+    B1, B2 = np.meshgrid(x1, x2, indexing='xy')
+    Z = np.zeros((x2.size, x1.size))
+    for (i,j),v in np.ndenumerate(Z):
+        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+    
+    # Create plot
+    fig = plt.figure(figsize=(10,6))
+    fig.suptitle('Gaussian Process Regression', fontsize=20)
+    
+    ax = axes3d.Axes3D(fig)
+    
+    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
+    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
+    
+    ax.set_xlabel('x')
+    ax.set_xlim(0,1)
+    ax.set_ylabel('y')
+    ax.set_ylim(ymin=0)
+    ax.set_zlabel('z');
+    
+    plt.show()
+
+
+    return Z
