@@ -54,6 +54,11 @@ plt.show()
 def V(data):
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+    
+    '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
+    
+    CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
+    
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     gpr = GaussianProcessRegressor()
     gpr.fit(data[:,0:2], data[:,2])
