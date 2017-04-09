@@ -4,8 +4,8 @@ Created on Thu Mar 23 11:49:22 2017
 
 @author: Pepe
 """
-import copy
 
+import copy
 import math
 import numpy as np
 from sklearn import linear_model
@@ -28,7 +28,7 @@ y_surf=np.arange(0, 1, 0.01)
 x_surf, y_surf = np.meshgrid(x_surf, y_surf)
 z_surf = g(x_surf,y_surf)
 ax.plot_surface(x_surf, y_surf, z_surf, cmap=cm.hot);    # plot a 3d surface plot
-N = 16
+N = 16 #number of data points to start with
 #X = np.zeros((N,2))
 #y = np.zeros((N))
 data = np.zeros((N,3))#in the form array[[x1,y1,z1],...,[xn,yn,zn]]
@@ -37,7 +37,7 @@ for i in range(N):
     x2=random()
     data[i,0] = x1
     data[i,1] = x2
-    data[i,2] = g(data[i,0],data[i,1])
+    data[i,2] = abs(g(data[i,0],data[i,1]))
 N=len(data)
 
 '''plot data points'''
@@ -53,14 +53,29 @@ plt.show()
 '''function to do gaussian regression given some data'''
 def V(data):
     from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+    from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic,ExpSineSquared, DotProduct, Exponentiation, ConstantKernel as C
     
     '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
     
     CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
+    '''kernels functions examples'''
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
+    #kernel = 1**2*RBF(length_scale = 1) #grade: 1
+    #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
+    #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
+    #kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
+    #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
+    #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
+    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: 1
+    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
+    #kernel = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
+    #kernel = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
+    exponent = 2
+    kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-    gpr = GaussianProcessRegressor()
+    gpr = GaussianProcessRegressor(kernel = kernel)
     gpr.fit(data[:,0:2], data[:,2])
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
