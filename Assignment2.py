@@ -28,7 +28,7 @@ y_surf=np.arange(0, 1, 0.01)
 x_surf, y_surf = np.meshgrid(x_surf, y_surf)
 z_surf = g(x_surf,y_surf)
 ax.plot_surface(x_surf, y_surf, z_surf, cmap=cm.hot);    # plot a 3d surface plot
-N = 1
+N = 16
 #X = np.zeros((N,2))
 #y = np.zeros((N))
 data = np.zeros((N,3))#in the form array[[x1,y1,z1],...,[xn,yn,zn]]
@@ -191,7 +191,7 @@ def FreeZones(data,zones):
             freeZones.append(i)
     '''if all zones have points, return []'''
     if len(zones_with_points) == len(zones):
-        return []
+        return [[], zones_with_points]
     
     return [freeZones, zones_with_points]
               
