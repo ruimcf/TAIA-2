@@ -68,6 +68,25 @@ def V(data):
 
 V(data)
 
+# Create plot
+fig = plt.figure(figsize=(10,6))
+fig.suptitle('Gaussian Process Regression', fontsize=20)
+
+ax = axes3d.Axes3D(fig)
+x1 = np.linspace(0,1.01,100)
+x2 = np.linspace(0,1.01,100)
+B1, B2 = np.meshgrid(x1, x2, indexing='xy')
+ax.plot_surface(B1, B2, V(data), rstride=10, cstride=5, alpha=0.4)
+ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
+
+ax.set_xlabel('x')
+ax.set_xlim(0,1)
+ax.set_ylabel('y')
+ax.set_ylim(ymin=0)
+ax.set_zlabel('z');
+
+plt.show()
+
 '''h() computes the attractiveness of the central point of a given zone of the map w.r.t. the starting point'''
 ''' it outputs the central point and its value '''
 def h(zone,currentpoint,data,speed):
@@ -168,7 +187,7 @@ def FreeZones(data,zones):
         
     for i in zones:
         if i not in zones_with_points:
-            print('free zone in function',i)
+            #print('free zone in function',i)
             freeZones.append(i)
     '''if all zones have points, return []'''
     if len(zones_with_points) == len(zones):
@@ -201,13 +220,13 @@ if __name__ == "__main__":
         if freeZones == []:
             #print('StopDividing',StopDividing(data,zones))
             #while StopDividing(data,zones) is False:
-            print('Zonas pre split', zones)
+            #print('Zonas pre split', zones)
             zones = splitZones(zones)
-            print('Zonas pos split',zones)
+            #print('Zonas pos split',zones)
             #freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
             freeZones = FreeZones(data,zones)[0]
-            print('freeZones', freeZones)
-            print('zones with points', FreeZones(data,zones)[1])
+            #print('freeZones', freeZones)
+            #print('zones with points', FreeZones(data,zones)[1])
         '''visitar todas as freezones '''
         for freeZone in freeZones:#define number of points to search beforehand
             #print(len(freeZones))
@@ -218,7 +237,7 @@ if __name__ == "__main__":
             #print('profit',profit)
             chosenZone = freeZone #this means this zone is chosen
             freeZones.remove(chosenZone) #remove chosenZone
-            print('freeZones', freeZones)
+            #print('freeZones', freeZones)
             #print('chosenZone',chosenZone)
             chosenPoint = h(freeZone,start,data,speed)[0]
             if chosenPoint == positions[-1]:
@@ -233,8 +252,19 @@ if __name__ == "__main__":
         #print('positions',positions[len(data):])
         
         i+=1
-    print('Positions',positions)
-    print('Profits',profits)
+    #print('Positions',positions)
+    #print('Profits',profits)
+    
+'''plot visited points'''
+positions_x = []
+positions_y = []
+for i in range(len(positions)):
+    positions_x.append(positions[i][0])
+    positions_y.append(positions[i][1])
+
+plt.plot(positions_x, positions_y, 'ro')
+plt.axis([0, 1, 0, 1])
+plt.show()
 
 def FinalEstimation(F, data):
     data = data_with_true_values
