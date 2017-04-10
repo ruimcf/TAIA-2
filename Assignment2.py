@@ -96,9 +96,7 @@ V(data)
 
 def PCA(data):
     '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
-    
     CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
-
     # eigenvectors and eigenvalues from the covariance matrix
     eig_val_cov, eig_vec_cov = np.linalg.eig(CovarianceMatrix)
     
@@ -113,8 +111,9 @@ def PCA(data):
     eig_pairs = [(np.abs(eig_val_cov[i]), eig_vec_cov[:,i]) for i in range(len(eig_val_cov))]
     
     # Sort the (eigenvalue, eigenvector) tuples from high to low
+    print('eig_pairs',eig_pairs)
     eig_pairs.sort(key=lambda x: x[0], reverse=True)
-    
+    print('eig_pairs',eig_pairs)
     # Visually confirm that the list is correctly sorted by decreasing eigenvalues
     for i in eig_pairs:
         print(i[0])
@@ -123,13 +122,20 @@ def PCA(data):
     matrix_w = np.hstack((eig_pairs[0][1].reshape(3,1), eig_pairs[1][1].reshape(3,1)))
     print('Matrix W', matrix_w)
 
-    #transform the data points into the new space with the matrix transformation (y = data*W)
-    #NOTE: data is Nx3-dimensional and W is 3x2 dimensional
+    #transform the data points into the new space with the matrix transformation (transformed = data*W)
+    #NOTE: data is Nx3-dimensional and W is 3x2 dimensional, transformed is Nx2 dimensional
     transformed = np.dot(data, matrix_w)
-    #plot results:
     
-    plt.plot(transformed[0,0:int(len(data)/2)], transformed[1,0:int(len(data)/2)], 'o', markersize=7, color='blue', alpha=0.5, label='class1')
-    plt.plot(transformed[0,int(len(data)/2):len(data)], transformed[1,int(len(data)/2):len(data)], '^', markersize=7, color='red', alpha=0.5, label='class2')
+    CovarianceMatrixTransformed =np.cov(transformed.T)
+    
+    #transformed = transformed*(-1)
+    print('transformed', transformed)
+    print('dim transformed', len(transformed))
+    #plot results:
+    plt.plot(transformed[:,0],transformed[:,1],'o',markersize=7,color='blue',alpha=0.5, label='Transformed points')
+    #plt.plot(data[:,0],data[:,1],'^',markersize=7,color='red',alpha=0.5, label='data') #NOTE: it makes no sense to compare in the same 2x2 plot, since the subspace is different
+    #plt.plot(transformed[0,0:int(len(data)/2)], transformed[1,0:int(len(data)/2)], 'o', markersize=7, color='blue', alpha=0.5, label='class1')
+    #plt.plot(transformed[0,int(len(data)/2):len(data)], transformed[1,int(len(data)/2):len(data)], '^', markersize=7, color='red', alpha=0.5, label='class2')
     plt.xlim([-4,4])
     plt.ylim([-4,4])
     plt.xlabel('x_values')
@@ -159,7 +165,7 @@ def PCA(data):
     
     plt.show()
     '''
-    return [CovarianceMatrix, eig_val_cov, eig_vec_cov]
+    return [transformed, matrix_w, CovarianceMatrix, eig_val_cov, eig_vec_cov]
 
 PCA(data)
 
@@ -189,10 +195,26 @@ def h(zone,currentpoint,data,speed):
     #x = np.zeros(1,2)
     x = [0., 0.]
     '''create point in center of zone using [(x3,y3)-(x1,y1)]/2 + (x1,y1)'''
+    '''NOTE: this is where we choose low variance region points'''
     x[0] = (zone[2][0] - zone[0][0]) / 2 + zone[0][0]#point between bottomRight and bottomLeft
     x[1] = (zone[2][1] - zone[0][1]) / 2 + zone[0][1]#point between upLeft and bottomRight
-    '''evaluate point '''
+    '''evaluate points '''
     Z_pred = V(data)[99*int(x[0])][99*int(x[1])] #get predicted value of x from gaussian distribution
+    #points that define the zone:
+    Z_pred2 = V(data)[99*int(zone[0][0])][99*int(zone[0][1])]
+    Z_pred3 = V(data)[99*int(zone[1][0])][99*int(zone[1][1])]
+    Z_pred4 = V(data)[99*int(zone[2][0])][99*int(zone[2][1])]
+    Z_pred5 = V(data)[99*int(zone[3][0])][99*int(zone[3][1])]
+    
+    '''compute covariance matrix of 5 points within this region: the points that define the region, and the central point'''
+    dataPoints = []
+    for point in zone:
+        dataPoints.append(point)
+    dataPoints.append([x[0], x[1], Z_pred])#prepare dataPoints for PCA 
+    CovarianceMatrix = np.cov(map(list, zip(*dataPoints))) #transposed dataPoints
+    eigenValues, eigenVectors = np.linalg.eig(CovarianceMatrix) #get eigenvalues of covariance matrix
+    #if the eigenvalues are big, then there is strong relation between variables, which means high covariance.
+    #we are aiming to zones with low variance, and therefore low eigenvalues.
     
     #print('start',currentpoint)
     dist = math.sqrt((x[0]-currentpoint[0])**2 + (x[1]-currentpoint[1])**2)#ditância entre dado ponto e ponto actual onde se encontra o navio
@@ -200,8 +222,14 @@ def h(zone,currentpoint,data,speed):
     #print('t_viagem',t_viagem)
     #print('Z_pred',Z_pred)
     lucro = max(Z_pred - t_viagem/100, 0 ) #max between 0 and profit, to avoid negative value
+    repulsiveness = eigenValues[2]*t_viagem/np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]) 
+    #EXPLICACAO DA REPULSIVENESS: o valor proprio associado a Z é tanto maior quanto maior for a variancia de Z.
+    #Escolhidos 5 pontos numa zona, é possivel entao determinar a variancia de Z com um certo erro.
+    # por isso, quanto maior o valor proprio, pior.
+    # quanto maior o tempo de viagem, pior.
+    # quanto maior o valor estimado dos pontos na zona, melhor (daí a divisão).
     #print('lucro',lucro)
-    return [x, lucro]
+    return [x, lucro, repulsiveness]
 
 
 '''h([3,2],[0,0],1)'''
@@ -322,7 +350,7 @@ if __name__ == "__main__":
             freeZones = FreeZones(data,zones)[0]
             #print('freeZones', freeZones)
             #print('zones with points', FreeZones(data,zones)[1])
-        '''visitar todas as freezones '''
+        #visitar todas as freezones 
         for freeZone in freeZones:#define number of points to search beforehand
             #print(len(freeZones))
             #print('chegou aqui')
@@ -341,7 +369,7 @@ if __name__ == "__main__":
                 #print('chosenPoint',chosenPoint)
                 #print('data',data)
         #print('freeZones',freeZones)
-        '''freeZones = removeZones2k(free)'''
+        #freeZones = removeZones2k(free)
         # data = np.append(data,[[start[0],start[1],V(data)[start[0]][start[1]]]],axis=0)
         
         #print('positions',positions[len(data):])
@@ -350,7 +378,7 @@ if __name__ == "__main__":
     #print('Positions',positions)
     #print('Profits',profits)
     
-'''plot visited points'''
+#plot visited points
 positions_x = []
 positions_y = []
 for i in range(len(positions)):
