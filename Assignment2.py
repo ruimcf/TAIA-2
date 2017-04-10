@@ -88,6 +88,23 @@ def V(data):
 
 V(data)
 
+def PCA(data):
+    '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
+    
+    CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
+
+    # eigenvectors and eigenvalues for the from the covariance matrix
+    eig_val_cov, eig_vec_cov = np.linalg.eig(CovarianceMatrix)
+    
+    for i in range(len(eig_val_cov)):
+        eigvec_cov = eig_vec_cov[:,i].reshape(1,3).T
+        #assert eigvec_sc.all() == eigvec_cov.all(), 'Eigenvectors are not identical'
+    
+        print('Eigenvalue {} from covariance matrix: {}'.format(i+1, eig_val_cov[i]))
+        print(40 * '-')
+
+PCA(data)
+
 # Create plot
 fig = plt.figure(figsize=(10,6))
 fig.suptitle('Gaussian Process Regression', fontsize=20)
