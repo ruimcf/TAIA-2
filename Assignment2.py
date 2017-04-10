@@ -19,15 +19,20 @@ from matplotlib import cm
 '''generate data'''
 def g(x,y):
     return np.sin(10*(x+y))+random()
-'''plot function to predict'''
+
+'''
+#plot function to predict
 fig = plt.figure()
 ax = fig.gca(projection='3d')
-plt.hold(True)
+#plt.hold(True)
 x_surf=np.arange(0, 1, 0.01)    # generate a mesh
 y_surf=np.arange(0, 1, 0.01)
 x_surf, y_surf = np.meshgrid(x_surf, y_surf)
 z_surf = g(x_surf,y_surf)
 ax.plot_surface(x_surf, y_surf, z_surf, cmap=cm.hot);    # plot a 3d surface plot
+
+plt.show()
+'''
 N = 16 #number of data points to start with
 #X = np.zeros((N,2))
 #y = np.zeros((N))
@@ -39,8 +44,8 @@ for i in range(N):
     data[i,1] = x2
     data[i,2] = abs(g(data[i,0],data[i,1]))
 N=len(data)
-
-'''plot data points'''
+'''
+#plot data points
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.scatter(data[:,0], data[:,1], data[:,2]);
@@ -50,6 +55,7 @@ ax.set_ylabel('y label')
 ax.set_zlabel('z label')
 
 plt.show()
+'''
 '''function to do gaussian regression given some data'''
 def V(data):
     from sklearn.gaussian_process import GaussianProcessRegressor
@@ -93,7 +99,7 @@ def PCA(data):
     
     CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
 
-    # eigenvectors and eigenvalues for the from the covariance matrix
+    # eigenvectors and eigenvalues from the covariance matrix
     eig_val_cov, eig_vec_cov = np.linalg.eig(CovarianceMatrix)
     
     for i in range(len(eig_val_cov)):
@@ -102,6 +108,58 @@ def PCA(data):
     
         print('Eigenvalue {} from covariance matrix: {}'.format(i+1, eig_val_cov[i]))
         print(40 * '-')
+
+  # Make a list of (eigenvalue, eigenvector) tuples
+    eig_pairs = [(np.abs(eig_val_cov[i]), eig_vec_cov[:,i]) for i in range(len(eig_val_cov))]
+    
+    # Sort the (eigenvalue, eigenvector) tuples from high to low
+    eig_pairs.sort(key=lambda x: x[0], reverse=True)
+    
+    # Visually confirm that the list is correctly sorted by decreasing eigenvalues
+    for i in eig_pairs:
+        print(i[0])
+        
+    #Choosing 2 eigenvectors with the largest eigenvalues
+    matrix_w = np.hstack((eig_pairs[0][1].reshape(3,1), eig_pairs[1][1].reshape(3,1)))
+    print('Matrix W', matrix_w)
+
+    #transform the data points into the new space with the matrix transformation (y = data*W)
+    #NOTE: data is Nx3-dimensional and W is 3x2 dimensional
+    transformed = np.dot(data, matrix_w)
+    #plot results:
+    
+    plt.plot(transformed[0,0:int(len(data)/2)], transformed[1,0:int(len(data)/2)], 'o', markersize=7, color='blue', alpha=0.5, label='class1')
+    plt.plot(transformed[0,int(len(data)/2):len(data)], transformed[1,int(len(data)/2):len(data)], '^', markersize=7, color='red', alpha=0.5, label='class2')
+    plt.xlim([-4,4])
+    plt.ylim([-4,4])
+    plt.xlabel('x_values')
+    plt.ylabel('y_values')
+    plt.legend()
+    plt.title('Transformed samples with class labels')
+    
+    plt.show()
+    
+    # ALTERNATIVE WAY TO COMPUTE THE SAME THING:
+    #with linear PCA
+    '''
+    from sklearn.decomposition import KernelPCA, PCA as sklearnPCA  
+    
+    sklearn_pca = sklearnPCA(n_components=2)
+    sklearn_transf = sklearn_pca.fit_transform(data)
+    
+    plt.plot(sklearn_transf[0:int(len(data)/2),0],sklearn_transf[0:int(len(data)/2),1], 'o', markersize=7, color='blue', alpha=0.5, label='class1')
+    plt.plot(sklearn_transf[int(len(data)/2):int(len(data)),0], sklearn_transf[int(len(data)/2):int(len(data)),1], '^', markersize=7, color='red', alpha=0.5, label='class2')
+    
+    plt.xlabel('x_values')
+    plt.ylabel('y_values')
+    plt.xlim([-4,4])
+    plt.ylim([-4,4])
+    plt.legend()
+    plt.title('Transformed samples with class labels from matplotlib.mlab.PCA()')
+    
+    plt.show()
+    '''
+    return [CovarianceMatrix, eig_val_cov, eig_vec_cov]
 
 PCA(data)
 
