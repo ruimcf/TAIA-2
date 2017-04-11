@@ -231,7 +231,7 @@ def splitZones(zonesList):
         midRight = [(UpRight[0] - DownRight[0])/2 + DownRight[0], (UpRight[1] - DownRight[1])/2 + DownRight[1]]
         midUp = [(UpLeft[0] - UpRight[0])/2 + UpRight[0], (UpLeft[1] - UpRight[1])/2 + UpRight[1]]
         midLeft = [(DownLeft[0] - UpLeft[0])/2 + UpLeft[0], (DownLeft[1] - UpLeft[1])/2 + UpLeft[1]]
-        center = [(UpRight[0] - DownLeft[0])/2 + DownLeft[0], (UpRight[0] - DownLeft[0])/2 + DownLeft[0]]
+        center = [(UpRight[0] - DownLeft[0])/2 + DownLeft[0], (UpRight[1] - DownLeft[1])/2 + DownLeft[1]]
         '''
         midDown = [(downRight[0] - downLeft[0])/2, downRight[1]]
         midRight = [upRight[0], (upRight[1] - downRight[1])/2]
@@ -245,6 +245,21 @@ def splitZones(zonesList):
         newZonesList.append([midLeft, center, midUp, UpLeft])
 
     return newZonesList
+
+#plot splitZones:
+zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
+zones=[zone]
+PositionsX = []
+PositionsY = []
+for i in range(3):
+    zones = splitZones(zones)
+    for zone in zones:
+        for point in zone:
+            PositionsX.append(point[0])
+            PositionsY.append(point[1])
+    plt.plot(PositionsX, PositionsY, 'ro')
+    plt.axis([0, 1, 0, 1])
+    plt.show()
 
 def removeZones2k(freeZonesList, positionsList):
     for zone in freeZonesList:
@@ -289,6 +304,8 @@ def FreeZones(data,zones):
                         p3 = [(i+1)*zoneSide, (j+1)*zoneSide]
                         p4 = [i*zoneSide, (j+1)*zoneSide]
                         correspondingZone = [p1,p2,p3,p4]
+        #print('point', )
+        #print('corresponding zone',correspondingZone)
         zones_with_points.append(correspondingZone)
         
     for i in zones:
@@ -301,6 +318,9 @@ def FreeZones(data,zones):
     
     return [freeZones, zones_with_points]
               
+def FreeZonesQuadratic(data, zones):
+    freezones = []
+    zones_with_points = []
     
 
 
@@ -379,7 +399,7 @@ if __name__ == "__main__":
         i+=1
 
 #print('Positions',positions)
-#print('new positions', newPositions)
+print('new positions', newPositions)
 #print('Profits',profits)
 #print('positions length', len(positions))
 #print('profits length', len(profits))
