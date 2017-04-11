@@ -212,8 +212,9 @@ def FreeZonesQuadratic(data, zones):
 
 
 def planner(X, z):
-    data = []
-    for i in range(len(X)):
+    N=len(X)
+    data = np.zeros((N,3))
+    for i in range(N):
         x, y = X[i]
         data[i,0] = x
         data[i,1] = y
