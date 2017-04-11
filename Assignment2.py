@@ -319,7 +319,7 @@ if __name__ == "__main__":
     start = [0,0]
     speed = 1
     t=2
-    T=2
+    T=5
     i=0
     
     while i < T:
