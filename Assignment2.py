@@ -319,8 +319,22 @@ def FreeZones(data,zones):
     return [freeZones, zones_with_points]
               
 def FreeZonesQuadratic(data, zones):
-    freezones = []
+    freeZones = []
     zones_with_points = []
+    for zone in zones:
+        
+        points_in_zone = []
+        for point in data:
+            if zone[0][0] < point[0] and zone[1][0] > point[0] and zone[0][1] < point[1] and zone[2][1] > point[1]:
+                points_in_zone.append(point)
+                break #break the data loop, because this zone cannot be a freeZone
+        if points_in_zone == []:
+            print('zone', zone)
+            freeZones.append(zone)
+        else:
+            zones_with_points.append(zone)
+            
+    return [freeZones, zones_with_points]
     
 
 
