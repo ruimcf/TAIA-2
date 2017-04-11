@@ -189,6 +189,8 @@ def FreeZones(data,zones):
                         p3 = [(i+1)*zoneSide, (j+1)*zoneSide]
                         p4 = [i*zoneSide, (j+1)*zoneSide]
                         correspondingZone = [p1,p2,p3,p4]
+        #print('point', )
+        #print('corresponding zone',correspondingZone)
         zones_with_points.append(correspondingZone)
 
     for i in zones:
@@ -198,12 +200,37 @@ def FreeZones(data,zones):
     '''if all zones have points, return []'''
     if len(zones_with_points) == len(zones):
         return [[], zones_with_points]
+    return [freeZones, zones_with_points]
+
+
+def FreeZonesQuadratic(data, zones):
+    freeZones = []
+    zones_with_points = []
+    for zone in zones:
+
+        points_in_zone = []
+        for point in data:
+            if zone[0][0] < point[0] and zone[1][0] > point[0] and zone[0][1] < point[1] and zone[2][1] > point[1]:
+                points_in_zone.append(point)
+                break #break the data loop, because this zone cannot be a freeZone
+        if points_in_zone == []:
+            print('zone', zone)
+            freeZones.append(zone)
+        else:
+            zones_with_points.append(zone)
 
     return [freeZones, zones_with_points]
 
 
 
 def planner(X, z):
+    data = []
+    for i in range(len(X)):
+        x, y = X[i]
+        data[i,0] = x
+        data[i,1] = y
+        data[i,2] = z[i]
+
     model = V(z)
     zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])]
     freeZones = FreeZones(zones)[0]
@@ -217,7 +244,7 @@ def planner(X, z):
 
     while True:
         for zone in freeZones:
-            attractiveness.append(h(zone, z, inst.s))
+            attractiveness.append(h(zone, X, z, inst.s))
         for i in range(0, len(attractiveness)):
             newBestZone = freeZones.pop([attractiveness.index(max(attractiveness))])
             bestZones.append(newBestZone)
@@ -251,8 +278,7 @@ def tsp(points):
 
 if __name__ == "__main__":
     data = init()
-
-    route = planer(X, z)
+    route = planner(data[:,0:2], data[:,2])
 
 
 
