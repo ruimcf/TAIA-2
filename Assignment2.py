@@ -107,41 +107,29 @@ def V(data):
 
 '''h() computes the attractiveness of the central point of a given zone of the map w.r.t. the starting point'''
 ''' it outputs the central point and its value '''
-def h(zone,currentpoint,data,speed):
-    x = [0., 0.]
-    '''create point in center of zone using [(x3,y3)-(x1,y1)]/2 + (x1,y1)'''
-    '''NOTE: this is where we choose high variance region points'''
-    x[0] = (zone[2][0] - zone[0][0]) / 2 + zone[0][0]
-    x[1] = (zone[2][1] - zone[0][1]) / 2 + zone[0][1]
-    Z_pred = V(data)[99*int(x[0])][99*int(x[1])] #get predicted value of x from gaussian distribution
+def h(zone, data, model):
+    Z_pred = model.predict(zone.center) #get predicted value of x from gaussian distribution
     #points that define the zone:
-    Z_pred2 = V(data)[99*int(zone[0][0])][99*int(zone[0][1])]
-    Z_pred3 = V(data)[99*int(zone[1][0])][99*int(zone[1][1])]
-    Z_pred4 = V(data)[99*int(zone[2][0])][99*int(zone[2][1])]
-    Z_pred5 = V(data)[99*int(zone[3][0])][99*int(zone[3][1])]
+    Z_pred2 = model.predict(zone.downLeft)
+    Z_pred3 = model.predict(zone.downRight
+    Z_pred4 = model.predict(zone.upRight)
+    Z_pred5 = model.predict(zone.upLeft)
     '''compute covariance matrix of 5 points within this region: the points that define the region, and the central point'''
     dataPoints = []
     for point in zone:
         dataPoints.append(point)
-    dataPoints.append([x[0], x[1], Z_pred])#prepare dataPoints for PCA
+    dataPoints.append([zone.center[0], zone.center[1], Z_pred])#prepare dataPoints for PCA
     CovarianceMatrix = np.cov(map(list, zip(*dataPoints))) #transposed dataPoints
     eigenValues, eigenVectors = np.linalg.eig(CovarianceMatrix) #get eigenvalues of covariance matrix
     #if the eigenvalues are big, then there is strong relation between variables, which means high covariance.
-    #we are aiming to zones with low variance, and therefore low eigenvalues.
-    #print('start',currentpoint)
-    dist = math.sqrt((x[0]-currentpoint[0])**2 + (x[1]-currentpoint[1])**2)#ditância entre dado ponto e ponto actual onde se encontra o navio
-    t_viagem = dist/speed
-    #print('t_viagem',t_viagem)
-    #print('Z_pred',Z_pred)
-    lucro = max(Z_pred - t_viagem/100, 0 ) #max between 0 and profit, to avoid negative value
-    repulsiveness = eigenValues[-1]*t_viagem/np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5])
+    #we are aiming to zones with high variance, and therefore high eigenvalues.
+    lucro = max(Z_pred, 0 ) #max between 0 and profit, to avoid negative value
     attractiveness = eigenValues[-1]/(t_viagem*np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]))
-    #EXPLICACAO DA REPULSIVENESS: o valor proprio associado a Z é tanto maior quanto maior for a variancia de Z.
+    #EXPLICACAO DA ATTRACTIVENESS: o valor proprio associado a Z é tanto maior quanto maior for a variancia de Z.
     #Escolhidos 5 pontos numa zona, é possivel entao determinar a variancia de Z com um certo erro.
     # por isso, quanto maior o valor proprio, pior.
-    # quanto maior o tempo de viagem, pior.
     # quanto maior o valor estimado dos pontos na zona, melhor (daí a divisão).
-    return [x, lucro, attractiveness, repulsiveness]
+    return attractiveness
 
 
 def splitZones(zonesList):
@@ -244,7 +232,7 @@ def planner(X, z):
 
     while True:
         for zone in freeZones:
-            attractiveness.append(h(zone, X, z, inst.s))
+            attractiveness.append(h(zone, data, model))
         for i in range(0, len(attractiveness)):
             newBestZone = freeZones.pop([attractiveness.index(max(attractiveness))])
             bestZones.append(newBestZone)
