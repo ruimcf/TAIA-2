@@ -246,7 +246,7 @@ def splitZones(zonesList):
 
     return newZonesList
 
-#plot splitZones:
+#PLOT SPLITZONES:
 zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
 zones=[zone]
 PositionsX = []
@@ -336,6 +336,31 @@ def FreeZonesQuadratic(data, zones):
             
     return [freeZones, zones_with_points]
     
+
+#PLOT FREEZONESQUADRATIC:
+import matplotlib.pyplot
+free1 = []
+free2 = []
+zone = [[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5]]
+zones=[zone]
+zones = splitZones(zones)
+print('zones',zones)
+#print('freezones', FreeZonesQuadratic(data,zones)[0])
+while FreeZonesQuadratic(data,zones)[0] == []:
+    zones = splitZones(zones)
+    freeZones = FreeZonesQuadratic(data,zones)[0]
+for freezone in freeZones:
+    print('freezone',freezone)
+    for point in freezone:
+        free1.append(point[0])
+        free2.append(point[1])
+x_axis = np.append(data[:,0], free1)
+y_axis = np.append(data[:,1], free2)
+plt.plot(data[:,0], data[:,1],'ro')
+#matplotlib.pyplot.scatter(free1, free2,color=['green'])
+plt.plot(free1, free2)
+plt.axis([0, 1, 0, 1])
+plt.show()
 
 
 zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
