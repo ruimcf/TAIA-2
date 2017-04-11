@@ -20,7 +20,7 @@ from matplotlib import cm
 def g(x,y):
     return np.sin(10*(x+y))+random()
 
-'''
+
 #plot function to predict
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -32,7 +32,7 @@ z_surf = g(x_surf,y_surf)
 ax.plot_surface(x_surf, y_surf, z_surf, cmap=cm.hot);    # plot a 3d surface plot
 
 plt.show()
-'''
+
 N = 16 #number of data points to start with
 #X = np.zeros((N,2))
 #y = np.zeros((N))
@@ -44,7 +44,7 @@ for i in range(N):
     data[i,1] = x2
     data[i,2] = abs(g(data[i,0],data[i,1]))
 N=len(data)
-'''
+
 #plot data points
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -55,7 +55,7 @@ ax.set_ylabel('y label')
 ax.set_zlabel('z label')
 
 plt.show()
-'''
+
 '''function to do gaussian regression given some data'''
 def V(data):
     from sklearn.gaussian_process import GaussianProcessRegressor
@@ -167,26 +167,7 @@ def PCA(data):
     '''
     return [transformed, matrix_w, CovarianceMatrix, eig_val_cov, eig_vec_cov]
 
-PCA(data)
-
-# Create plot
-fig = plt.figure(figsize=(10,6))
-fig.suptitle('Gaussian Process Regression', fontsize=20)
-
-ax = axes3d.Axes3D(fig)
-x1 = np.linspace(0,1.01,100)
-x2 = np.linspace(0,1.01,100)
-B1, B2 = np.meshgrid(x1, x2, indexing='xy')
-ax.plot_surface(B1, B2, V(data), rstride=10, cstride=5, alpha=0.4)
-ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
-
-ax.set_xlabel('x')
-ax.set_xlim(0,1)
-ax.set_ylabel('y')
-ax.set_ylim(ymin=0)
-ax.set_zlabel('z');
-
-plt.show()
+#PCA(data)
 
 '''h() computes the attractiveness of the central point of a given zone of the map w.r.t. the starting point'''
 ''' it outputs the central point and its value '''
@@ -222,14 +203,16 @@ def h(zone,currentpoint,data,speed):
     #print('t_viagem',t_viagem)
     #print('Z_pred',Z_pred)
     lucro = max(Z_pred - t_viagem/100, 0 ) #max between 0 and profit, to avoid negative value
-    repulsiveness = eigenValues[2]*t_viagem/np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]) 
+    repulsiveness = eigenValues[-1]*t_viagem/np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]) 
+    attractiveness = eigenValues[-1]/(t_viagem*np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]))
     #EXPLICACAO DA REPULSIVENESS: o valor proprio associado a Z é tanto maior quanto maior for a variancia de Z.
     #Escolhidos 5 pontos numa zona, é possivel entao determinar a variancia de Z com um certo erro.
     # por isso, quanto maior o valor proprio, pior.
     # quanto maior o tempo de viagem, pior.
     # quanto maior o valor estimado dos pontos na zona, melhor (daí a divisão).
+    
     #print('lucro',lucro)
-    return [x, lucro, repulsiveness]
+    return [x, lucro, attractiveness, repulsiveness]
 
 
 '''h([3,2],[0,0],1)'''
@@ -331,69 +314,118 @@ if __name__ == "__main__":
     
 
     positions = data[:,0:2].tolist()
+    newPositions = []
     profits = []
     start = [0,0]
     speed = 1
     t=2
-    T=10
+    T=5
     i=0
     
     while i < T:
         profit = 0
+        values_of_h = []
+        #print('freeZones',freeZones)
         if freeZones == []:
+            #print('entrou aqui')
             #print('StopDividing',StopDividing(data,zones))
             #while StopDividing(data,zones) is False:
             #print('Zonas pre split', zones)
             zones = splitZones(zones)
             #print('Zonas pos split',zones)
-            #freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed
+            
+            while FreeZones(data,zones)[0] == []:
+                zones = splitZones(zones)
             freeZones = FreeZones(data,zones)[0]
+            #freeZones = copy.deepcopy(zones) #deepcopy used to avoid changes of list 'zones' when 'freeZones' is changed    
+            #print('new freeZones', freeZones)
             #print('freeZones', freeZones)
             #print('zones with points', FreeZones(data,zones)[1])
         #visitar todas as freezones 
         for freeZone in freeZones:#define number of points to search beforehand
+            attract = h(freeZone,start,data,speed)[2]#repulsiveness of this particular zone
+            values_of_h.append(attract)
+            #print('repulse', repulse)
+        #print('values of h', values_of_h)
+        chosenZone = freeZones[values_of_h.index(max(values_of_h))]#freeZone corresponding to value in values_of_h
+        chosenPoint = h(chosenZone,start,data,speed)[0]
+        #print('chosen point',chosenPoint)
+        if chosenPoint == positions[-1]: #if there are repetitions
+            break
+        positions.append(chosenPoint) #save chosen points for probing
+        newPositions.append(chosenPoint)
+        profits.append(max(values_of_h))
+        freeZones.remove(chosenZone)
+        start = chosenPoint
             #print(len(freeZones))
             #print('chegou aqui')
             #if profit < h(freeZone,start,data,speed)[1]:#user np.any if ncessary
-            profit = h(freeZone,start,data,speed)[1]
-            profits.append(profit) #save each expected profit
-            #print('profit',profit)
-            chosenZone = freeZone #this means this zone is chosen
-            freeZones.remove(chosenZone) #remove chosenZone
+            #profit = h(freeZone,start,data,speed)[1]
+            #profits.append(profit) #save each expected profit
+                         #print('profit',profit)
+            #chosenZone = freeZone #this means this zone is chosen
+            #freeZones.remove(chosenZone) #remove chosenZone
             #print('freeZones', freeZones)
             #print('chosenZone',chosenZone)
-            chosenPoint = h(freeZone,start,data,speed)[0]
-            if chosenPoint == positions[-1]:
-                break
-            positions.append(chosenPoint) #save chosen points for probing
+                         #chosenPoint = h(freeZone,start,data,speed)[0]
                 #print('chosenPoint',chosenPoint)
                 #print('data',data)
         #print('freeZones',freeZones)
         #freeZones = removeZones2k(free)
-        # data = np.append(data,[[start[0],start[1],V(data)[start[0]][start[1]]]],axis=0)
+        data = np.append(data,[[chosenPoint[0],chosenPoint[1],V(data)[chosenPoint[0]][chosenPoint[1]]]],axis=0)
         
         #print('positions',positions[len(data):])
         
         i+=1
-    #print('Positions',positions)
-    #print('Profits',profits)
-    
+
+#print('Positions',positions)
+#print('new positions', newPositions)
+#print('Profits',profits)
+#print('positions length', len(positions))
+#print('profits length', len(profits))
+
+# Create plot of Gaussian Regression
+fig = plt.figure(figsize=(10,6))
+fig.suptitle('Gaussian Process Regression', fontsize=20)
+plt.hold(True)
+ax = axes3d.Axes3D(fig)
+x1 = np.linspace(0,1.01,100)
+x2 = np.linspace(0,1.01,100)
+B1, B2 = np.meshgrid(x1, x2, indexing='xy')
+ax.plot_surface(B1, B2, V(data), rstride=10, cstride=5, alpha=0.4)
+ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
+
+ax.set_xlabel('x')
+ax.set_xlim(0,1)
+ax.set_ylabel('y')
+ax.set_ylim(ymin=0)
+ax.set_zlabel('z');
+
+#plt.show()
+
 #plot visited points
 positions_x = []
 positions_y = []
 for i in range(len(positions)):
     positions_x.append(positions[i][0])
     positions_y.append(positions[i][1])
-
+newPositions_x = []
+newPositions_y = []
+for i in range(len(newPositions)):
+    newPositions_x.append(newPositions[i][0])
+    newPositions_y.append(newPositions[i][1])
+    
 plt.plot(positions_x, positions_y, 'ro')
+plt.plot(newPositions_x, newPositions_y, 'ro', c=[1,1,1])
+#ax.scatter3D(newPositions_x, newPositions_y, np.zeros((1,len(newPositions_x))),c='r')
+#plt.plot(newPositions_x, newPositions_y,'ro')
 plt.axis([0, 1, 0, 1])
 plt.show()
 
 def FinalEstimation(F, data):
-    data = data_with_true_values
     for i in range(len(data)):
         data[i,2] = F(data[i,0],data[i,1])
-        
+        #now data has true values
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
     
