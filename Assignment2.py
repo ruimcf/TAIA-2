@@ -33,8 +33,8 @@ class Zone:
     def split(self):
         newZonesList = []
         newZonesList.append(Zone(self.downLeft, self.midDown, self.center, self.midLeft))
-        newZonesList.append(Zone(self.midDown, self.DownRight, self.midRight, self.center))
-        newZonesList.append(Zone(self.center, self.midRight, self.UpRight, self.midUp))
+        newZonesList.append(Zone(self.midDown, self.downRight, self.midRight, self.center))
+        newZonesList.append(Zone(self.center, self.midRight, self.upRight, self.midUp))
         newZonesList.append(Zone(self.midLeft, self.center, self.midUp, self.upLeft))
         return newZonesList
 
@@ -135,7 +135,7 @@ def h(zone, data, model):
 def splitZones(zonesList):
     newZonesList = []
     for zone in zonesList:
-        zonesToAppend = zone.splitZones()
+        zonesToAppend = zone.split()
         for newZone in zonesToAppend:
             newZonesList.append(newZone)
     return newZonesList
@@ -199,7 +199,7 @@ def FreeZonesQuadratic(data, zones):
 
         points_in_zone = []
         for point in data:
-            if zone[0][0] < point[0] and zone[1][0] > point[0] and zone[0][1] < point[1] and zone[2][1] > point[1]:
+            if zone.downLeft[0] < point[0] and zone.downRight[0] > point[0] and zone.downLeft[1] < point[1] and zone.upRight[1] > point[1]:
                 points_in_zone.append(point)
                 break #break the data loop, because this zone cannot be a freeZone
         if points_in_zone == []:
@@ -231,9 +231,11 @@ def planner(X, z):
     #Split the Grid until we have free zones
     while freeZones == []:
         zones = splitZones(zones)
-        freeZones = FreeZones(zones)[0]
+        #freeZones = FreeZones(zones)[0]
+        freeZones = FreeZonesQuadratic(data,zones)[0]
 
     while True:
+        attractiveness = []
         for zone in freeZones:
             attractiveness.append(h(zone, data, model))
         for i in range(0, len(attractiveness)):
