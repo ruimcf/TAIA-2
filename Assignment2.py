@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import copy
 import math
 import numpy as np
@@ -119,9 +120,9 @@ def h(zone, data, model):
     '''compute covariance matrix of 5 points within this region: the points that define the region, and the central point'''
     dataPoints = []
     for point in zone.getPoints():
-        dataPoints.append(point)
-    dataPoints.append([zone.center[0], zone.center[1]])#prepare dataPoints for PCA
-    CovarianceMatrix = np.cov(map(list, zip(*dataPoints))) #transposed dataPoints
+        dataPoints.append(point+model.predict(point))
+    dataPoints.append(zone.center+Z_pred)#prepare dataPoints for PCA
+    CovarianceMatrix = np.cov(np.transpose(np.asarray(dataPoints))) #transposed dataPoints
     eigenValues, eigenVectors = np.linalg.eig(CovarianceMatrix) #get eigenvalues of covariance matrix
     #if the eigenvalues are big, then there is strong relation between variables, which means high covariance.
     #we are aiming to zones with high variance, and therefore high eigenvalues.
@@ -248,6 +249,7 @@ def planner(X, z):
             newPositionsValues.append(V(data).predict([[newBestZone.center[0], newBestZone.center[1]]]))#get value of (x,y) newPoint in list
             data = np.concatenate((data, [[newBestZone.center[0], newBestZone.center[1], newPositionsValues[-1]]]),axis=0)#update data with new point (x,y,z)
             time = tsp(newPositions)
+            print("Tempo com {} pontos: {}".format(len(newPositions), time))
             if time > inst.T:
                 #Ultrapassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
                 newPositions.remove(newBestZone.center)
