@@ -25,7 +25,7 @@ class Zone:
         self.downRight = downRight
         self.upRight = upRight
         self.upLeft = upLeft
-        selg.midDown = [(downRight[0] - downLeft[0])/2 + downLeft[0], downLeft[1]]
+        self.midDown = [(downRight[0] - downLeft[0])/2 + downLeft[0], downLeft[1]]
         self.midRight = [downRight[0], (upRight[1] - downRight[1])/2 + downRight[1]]
         self.midUp = [(upLeft[0] - upRight[0])/2 + upRight[0], upRight[1]]
         self.midLeft = [upLeft[0], (downLeft[1] - upLeft[1])/2 + upLeft[1]]
@@ -220,9 +220,11 @@ def planner(X, z):
         data[i,1] = y
         data[i,2] = z[i]
 
-    model = V(z)
+    #model = V(z)
+    model = V(data)
     zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])]
-    freeZones = FreeZones(zones)[0]
+    #freeZones = FreeZones(zones)[0]
+    freeZones = FreeZonesQuadratic(data,zones)[0]
     newPositions = []
     profits = []
     bestZones = []
