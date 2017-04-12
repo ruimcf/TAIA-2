@@ -37,6 +37,8 @@ class Zone:
         newZonesList.append(Zone(self.center, self.midRight, self.upRight, self.midUp))
         newZonesList.append(Zone(self.midLeft, self.center, self.midUp, self.upLeft))
         return newZonesList
+    def getPoints(self):
+        return [self.downLeft, self.downRight, self.upRight, self.upLeft]
 
 # auxiliary function: euclidean distance
 def dist(x1,y1,x2,y2):
@@ -116,11 +118,9 @@ def h(zone, data, model):
     Z_pred5 = model.predict(zone.upLeft)
     '''compute covariance matrix of 5 points within this region: the points that define the region, and the central point'''
     dataPoints = []
-    dataPoints.append([zone.downLeft[0], zone.downLeft[1], Z_pred2])
-    dataPoints.append([zone.downRight[0], zone.downRight[1], Z_pred3])
-    dataPoints.append([zone.upRight[0], zone.upRight[1], Z_pred4])
-    dataPoints.append([zone.upLeft[0], zone.upLeft[1], Z_pred5])
-    dataPoints.append([zone.center[0], zone.center[1], Z_pred])#prepare dataPoints for PCA
+    for point in zone.getPoints():
+        dataPoints.append(point)
+    dataPoints.append([zone.center[0], zone.center[1]])#prepare dataPoints for PCA
     CovarianceMatrix = np.cov(map(list, zip(*dataPoints))) #transposed dataPoints
     eigenValues, eigenVectors = np.linalg.eig(CovarianceMatrix) #get eigenvalues of covariance matrix
     #if the eigenvalues are big, then there is strong relation between variables, which means high covariance.
@@ -198,7 +198,6 @@ def FreeZonesQuadratic(data, zones):
     freeZones = []
     zones_with_points = []
     for zone in zones:
-
         points_in_zone = []
         for point in data:
             if zone.downLeft[0] < point[0] and zone.downRight[0] > point[0] and zone.downLeft[1] < point[1] and zone.upRight[1] > point[1]:
@@ -256,6 +255,7 @@ def planner(X, z):
         if FreeZonesQuadratic(data, zones)[0] == []:
             # Usamos todas as zonas, então devemos continuar a dividir
             zones = splitZones(zones)
+            freeZones = FreeZonesQuadratic(data, zones)[0]
         else:
             # Atingimos a solução maxima
             route = []
@@ -288,7 +288,7 @@ if __name__ == "__main__":
         print('zones',zones)
         for zone in zones:
             print('zone',zone)
-            for point in zone:
+            for point in zone.getPoints():
                 PositionsX.append(point[0])
                 PositionsY.append(point[1])
         plt.plot(PositionsX, PositionsY, 'ro')
