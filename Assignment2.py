@@ -126,7 +126,7 @@ def h(zone, data, model):
     #if the eigenvalues are big, then there is strong relation between variables, which means high covariance.
     #we are aiming to zones with high variance, and therefore high eigenvalues.
     lucro = max(Z_pred, 0 ) #max between 0 and profit, to avoid negative value
-    attractiveness = eigenValues[-1]/(t_viagem*np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]))
+    attractiveness = eigenValues[-1]/(np.mean([Z_pred, Z_pred2, Z_pred3, Z_pred4, Z_pred5]))
     #EXPLICACAO DA ATTRACTIVENESS: o valor proprio associado a Z é tanto maior quanto maior for a variancia de Z.
     #Escolhidos 5 pontos numa zona, é possivel entao determinar a variancia de Z com um certo erro.
     # por isso, quanto maior o valor proprio, pior.
@@ -228,6 +228,7 @@ def planner(X, z):
     #freeZones = FreeZones(zones)[0]
     freeZones = FreeZonesQuadratic(data,zones)[0]
     newPositions = []
+    newPositionsValues = []
     profits = []
     bestZones = []
     #Split the Grid until we have free zones
@@ -241,17 +242,19 @@ def planner(X, z):
         for zone in freeZones:
             attractiveness.append(h(zone, data, model))
         for i in range(0, len(attractiveness)):
-            newBestZone = freeZones.pop([attractiveness.index(max(attractiveness))])
+            newBestZone = freeZones.pop(attractiveness.index(max(attractiveness)))
             bestZones.append(newBestZone)
             attractiveness.remove(max(attractiveness))
             newPositions.append(newBestZone.center)
+            newPositionsValues.append(V(data).predict([[newBestZone.center[0], newBestZone.center[1]]]))#get value of (x,y) newPoint in list
+            data = np.concatenate((data, [[newBestZone.center[0], newBestZone.center[1], newPositionsValues[-1]]]),axis=0)#update data with new point (x,y,z)
             time = tsp(newPositions)
             if time > inst.T:
-                #Ultrupassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
+                #Ultrapassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
                 newPositions.remove(newBestZone.center)
                 bestZones.remove(newBestZone)
-        if FreeZones(zones, z+newPositions)[0] == []:
-            # Usamos todas as zonas, então devemos continar a dividir
+        if FreeZonesQuadratic(data, zones)[0] == []:
+            # Usamos todas as zonas, então devemos continuar a dividir
             zones = splitZones(zones)
         else:
             # Atingimos a solução maxima
@@ -276,13 +279,15 @@ if __name__ == "__main__":
     route = planner(data[:,0:2], data[:,2])
 
     #PLOT SPLITZONES:
-    zone = [[0.,0.],[1.,0.],[1.,1.],[0.,1.]] #initial zone (all the grid)
-    zones=[zone]
+    zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])] #initial zone (all the grid)
+    #zones=[zone]
     PositionsX = []
     PositionsY = []
     for i in range(3):
         zones = splitZones(zones)
+        print('zones',zones)
         for zone in zones:
+            print('zone',zone)
             for point in zone:
                 PositionsX.append(point[0])
                 PositionsY.append(point[1])
