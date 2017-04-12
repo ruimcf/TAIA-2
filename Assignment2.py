@@ -254,10 +254,12 @@ def planner(X, z):
                 #Ultrapassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
                 newPositions.remove(newBestZone.center)
                 bestZones.remove(newBestZone)
-        if FreeZonesQuadratic(data, zones)[0] == []:
+        
+        #if FreeZonesQuadratic(data, zones)[0] == []:
             # Usamos todas as zonas, então devemos continuar a dividir
-            zones = splitZones(zones)
-            freeZones = FreeZonesQuadratic(data, zones)[0]
+        #    zones = splitZones(zones)
+        #    freeZones = FreeZonesQuadratic(data, zones)[0]
+            
         else:
             # Atingimos a solução maxima
             route = []
@@ -301,8 +303,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot
     free1 = []
     free2 = []
-    zone = [[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5]]
-    zones=[zone]
+    zones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
+    #zones=[zone]
     zones = splitZones(zones)
     print('zones',zones)
     #print('freezones', FreeZonesQuadratic(data,zones)[0])
@@ -327,11 +329,19 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(10,6))
     fig.suptitle('Gaussian Process Regression', fontsize=20)
     plt.hold(True)
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    exponent = 2
+    kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
+    gpr = GaussianProcessRegressor(kernel = kernel)
+    gpr.fit(data[:,0:2], data[:,2])
     ax = axes3d.Axes3D(fig)
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
-    ax.plot_surface(B1, B2, V(data), rstride=10, cstride=5, alpha=0.4)
+    Z = np.zeros((x2.size, x1.size))
+    for (i,j),v in np.ndenumerate(Z):
+        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
     ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
 
     ax.set_xlabel('x')
