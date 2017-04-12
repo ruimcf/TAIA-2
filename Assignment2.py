@@ -82,12 +82,12 @@ def V(data):
     '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
     CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
     '''kernels functions examples'''
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    #kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
     #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
     #kernel = 1**2*RBF(length_scale = 1) #grade: 1
     #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
     #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
-    #kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
     #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
     #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
     #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
@@ -313,7 +313,7 @@ if __name__ == "__main__":
         freeZones = FreeZonesQuadratic(data,zones)[0]
     for freezone in freeZones:
         print('freezone',freezone)
-        for point in freezone:
+        for point in freezone.getPoints():
             free1.append(point[0])
             free2.append(point[1])
     x_axis = np.append(data[:,0], free1)
@@ -329,7 +329,19 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(10,6))
     fig.suptitle('Gaussian Process Regression', fontsize=20)
     plt.hold(True)
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    #kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
+    #kernel = 1**2*RBF(length_scale = 1) #grade: 1
+    #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
+    #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
+    kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
+    #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
+    #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
+    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: 1
+    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
+    #kernel = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
+    #kernel = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
     exponent = 2
     kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     gpr = GaussianProcessRegressor(kernel = kernel)
