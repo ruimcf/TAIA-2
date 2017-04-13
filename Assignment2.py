@@ -261,7 +261,8 @@ def planner(X, z):
             freeZones = FreeZonesQuadratic(data, zones)[0]
         else:
             # Atingimos a solução maxima
-            return route;
+            route, cost = tsp(newPositions)
+            return route
 
 # basic function that returns the time to check some points
 def tsp(points):
