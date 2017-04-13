@@ -304,6 +304,7 @@ if __name__ == "__main__":
     free1 = []
     free2 = []
     zones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
+    freeZones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
     #zones=[zone]
     zones = splitZones(zones)
     print('zones',zones)
@@ -364,18 +365,13 @@ if __name__ == "__main__":
 
 
 #plot visited points
-    positions_x = []
-    positions_y = []
-    for i in range(len(positions)):
-        positions_x.append(positions[i][0])
-        positions_y.append(positions[i][1])
     newPositions_x = []
     newPositions_y = []
-    for i in range(len(newPositions)):
-        newPositions_x.append(newPositions[i][0])
-        newPositions_y.append(newPositions[i][1])
+    for i in range(len(route)):
+        newPositions_x.append(route[i][0])
+        newPositions_y.append(route[i][1])
 
-    plt.plot(positions_x, positions_y, 'ro')
+    #plt.plot(positions_x, positions_y, 'ro')
     plt.plot(newPositions_x, newPositions_y, 'ro', c=[1,1,1])
 #ax.scatter3D(newPositions_x, newPositions_y, np.zeros((1,len(newPositions_x))),c='r')
 #plt.plot(newPositions_x, newPositions_y,'ro')
