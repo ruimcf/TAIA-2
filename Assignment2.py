@@ -216,11 +216,13 @@ def FreeZonesQuadratic(data, zones):
 def planner(X, z):
     N=len(X)
     data = np.zeros((N,3))
+    dataPoints = []
     for i in range(N):
         x, y = X[i]
         data[i,0] = x
         data[i,1] = y
         data[i,2] = z[i]
+        dataPoints.append([x, y])
 
     #model = V(z)
     model = V(data)
@@ -228,7 +230,6 @@ def planner(X, z):
     #freeZones = FreeZones(zones)[0]
     freeZones = FreeZonesQuadratic(data,zones)[0]
     newPositions = []
-    newPositionsValues = []
     profits = []
     bestZones = []
     #Split the Grid until we have free zones
@@ -239,6 +240,7 @@ def planner(X, z):
 
     while True:
         attractiveness = []
+        bestZones = []
         for zone in freeZones:
             attractiveness.append(h(zone, data, model))
         for i in range(0, len(attractiveness)):
@@ -246,8 +248,6 @@ def planner(X, z):
             bestZones.append(newBestZone)
             attractiveness.remove(max(attractiveness))
             newPositions.append(newBestZone.center)
-            newPositionsValues.append(V(data).predict([[newBestZone.center[0], newBestZone.center[1]]]))#get value of (x,y) newPoint in list
-            data = np.concatenate((data, [[newBestZone.center[0], newBestZone.center[1], newPositionsValues[-1]]]),axis=0)#update data with new point (x,y,z)
             time = tsp(newPositions)
             print("Tempo com {} pontos: {}".format(len(newPositions), time))
             if time > inst.T:
@@ -255,11 +255,9 @@ def planner(X, z):
                 newPositions.remove(newBestZone.center)
                 bestZones.remove(newBestZone)
 
-        if FreeZonesQuadratic(data+newPositions, zones)[0] == []:
-            Usamos todas as zonas, então devemos continuar a dividir
-          zones = splitZones(zones)
-          freeZones = FreeZonesQuadratic(data, zones)[0]
-
+        if FreeZonesQuadratic(dataPoints+newPositions, zones)[0] == []:
+            zones = splitZones(zones)
+            freeZones = FreeZonesQuadratic(data, zones)[0]
         else:
             # Atingimos a solução maxima
             route = []
