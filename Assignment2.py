@@ -2,13 +2,14 @@
 import copy
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn import linear_model
 from random import random
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic,ExpSineSquared, DotProduct, Exponentiation, ConstantKernel as C
+import christofides
 
 # object for keeping instance data
 class INST:
@@ -248,9 +249,9 @@ def planner(X, z):
             bestZones.append(newBestZone)
             attractiveness.remove(max(attractiveness))
             newPositions.append(newBestZone.center)
-            time = tsp(newPositions)
-            print("Tempo com {} pontos: {}".format(len(newPositions), time))
-            if time > inst.T:
+            route, cost = tsp(newPositions)
+            print("Tempo com {} pontos: {}".format(len(newPositions), cost))
+            if cost > inst.T:
                 #Ultrapassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
                 newPositions.remove(newBestZone.center)
                 bestZones.remove(newBestZone)
@@ -260,20 +261,29 @@ def planner(X, z):
             freeZones = FreeZonesQuadratic(data, zones)[0]
         else:
             # Atingimos a solução maxima
-            route = []
-            for point in newPositions:
-                route.append((point[0], point[1]))
             return route;
 
 # basic function that returns the time to check some points
 def tsp(points):
-    time = 0;
-    xt, yt = (0,0)
-    for point in points:
-        time += dist(xt, yt, point[0], point[1])/inst.s + inst.t
-        xt, yt = point[0], point[1]
-    time += dist(xt, yt, 0, 0)
-    return time;
+    route = []
+    cost = 0
+    currentPoint = [0, 0]
+    pointsList = copy.deepcopy(points)
+    for i in range(0,len(points)):
+        min = 10
+        for point in pointsList:
+            distance = dist(currentPoint[0], currentPoint[1], point[0], point[1])
+            if distance != 0 and distance < min:
+                min = distance
+                nextPoint = point
+        route.append(nextPoint)
+        cost += dist(currentPoint[0], currentPoint[1], nextPoint[0], nextPoint[1])
+        pointsList.remove(nextPoint)
+        nextPoint = currentPoint
+    route.append([0, 0])
+    cost += dist(currentPoint[0], currentPoint[1], 0, 0)
+    cost += len(points)
+    return route, cost
 
 
 if __name__ == "__main__":
