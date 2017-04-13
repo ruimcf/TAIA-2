@@ -254,12 +254,12 @@ def planner(X, z):
                 #Ultrapassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
                 newPositions.remove(newBestZone.center)
                 bestZones.remove(newBestZone)
-        
-        #if FreeZonesQuadratic(data, zones)[0] == []:
-            # Usamos todas as zonas, então devemos continuar a dividir
-        #    zones = splitZones(zones)
-        #    freeZones = FreeZonesQuadratic(data, zones)[0]
-            
+
+        if FreeZonesQuadratic(data+newPositions, zones)[0] == []:
+            Usamos todas as zonas, então devemos continuar a dividir
+          zones = splitZones(zones)
+          freeZones = FreeZonesQuadratic(data, zones)[0]
+
         else:
             # Atingimos a solução maxima
             route = []
