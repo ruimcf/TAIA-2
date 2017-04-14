@@ -280,7 +280,7 @@ def Vtest(data,kernel):
     gpr.fit(data[:,0:2], data[:,2])
     return gpr
 
-def KernelUpdate(data, kernel):
+def KernelUpdate(data):
     part1 = data[:int(len(data)*0.5),:]
     part2 = data[int(len(data)*0.5):,:]
     E = []
@@ -299,8 +299,6 @@ def KernelUpdate(data, kernel):
     kernel11 = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
     kernel12 = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
     kernel13 = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
-    exponent = 2
-    kernel14 = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     kernels.append(kernel1)
     kernels.append(kernel2)
     kernels.append(kernel3)
@@ -314,7 +312,6 @@ def KernelUpdate(data, kernel):
     kernels.append(kernel11)
     kernels.append(kernel12)
     kernels.append(kernel13)
-    kernels.append(kernel14)
     for kernel in kernels:
         testModel = Vtest(part1, kernel)
         for point in part2:
@@ -330,7 +327,7 @@ def estimator(X, z, mesh):
         data[i,0] = x
         data[i,1] = y
         data[i,2] = z[i]
-    newKernel = KernelUpdate(data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)))
+    newKernel = KernelUpdate(data)
     gpr = GaussianProcessRegressor(kernel = newKernel)
     gpr.fit(X, z)
     z = []
@@ -451,7 +448,7 @@ def plotVisitedPoints(route):
     for point in route:
         newPositions_x.append(point[0])
         newPositions_y.append(point[1])
-    plt.plot(newPositions_x, newPositions_y, 'ro')
+    plt.plot(newPositions_x, newPositions_y, 'ro', c=[1,1,1])
     plt.axis([0, 1, 0, 1])
     plt.title("Visited Points")
     plt.show()
@@ -478,7 +475,7 @@ if __name__ == "__main__":
     print(value)
 
     plotKernels()
-    iinalGaussian = FinalEstimation(g, newData, KernelUpdate(newData, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
+    iinalGaussian = FinalEstimation(g, newData, KernelUpdate(newData))
     plotVisitedPoints(route)
 
 
