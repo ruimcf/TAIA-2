@@ -81,7 +81,7 @@ def init():
 
 def V(data):
     '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
-    CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
+    #CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
     '''kernels functions examples'''
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
     #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
@@ -293,6 +293,15 @@ def Error(F, model, x, y):
     return abs(F(x,y) - model.predict([x,y]))
 
 def Vtest(data,kernel):
+    #transformar data num array Data
+    Data = np.zeros((len(data),3))
+    #print('Data',Data)
+    for i in range(len(data)):
+        #print('Data[i,0]',Data[i,0])
+        #print(data)
+        Data[i,0] = data[i][0]
+        Data[i,1] = data[i][1]
+        Data[i,2] = data[i][2]
     '''kernels functions examples'''
     #kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
     #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
@@ -310,7 +319,7 @@ def Vtest(data,kernel):
     #exponent = 2
     #kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     gpr = GaussianProcessRegressor(kernel = kernel)
-    gpr.fit(data[:,0:2], data[:,2])
+    gpr.fit(Data[:,0:2], Data[:,2])
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
@@ -357,11 +366,11 @@ def KernelUpdate(F, data, kernel):
         for point in data:
             E.append(Error(F, Vtest(data,kernel), point[0], point[1]))
         avgErrors.append(np.mean(E))
-    print(kernels[avgErrors.index(min(avgErrors))])
+    #print(kernels[avgErrors.index(min(avgErrors))])
     return kernels[avgErrors.index(min(avgErrors))] #get corresponding kernel
 
 def FinalEstimation(F, data, kernel):
-    print('data', data)
+    #print('data', data)
     Data = np.zeros((len(data),3))
     for i in range(len(Data)):
         Data[i,0] = data[i][0]
@@ -370,7 +379,7 @@ def FinalEstimation(F, data, kernel):
         #now data has true values
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-    print('kernel',kernel)
+    #print('kernel',kernel)
     gpr = GaussianProcessRegressor(kernel = kernel)
     gpr.fit(Data[:,0:2], Data[:,2])
     x1 = np.linspace(0,1.01,100)
@@ -403,14 +412,18 @@ def FinalEstimation(F, data, kernel):
 
 def UpdateData(data, route):
     newData = []
+    data = data.tolist()
+    for point in data:
+        newData.append([point[0],point[1]])
     for point in route:
         newData.append([point[0], point[1]])
+    #print('newData',newData)
     return newData
 
 if __name__ == "__main__":
     data = init()
     route = planner(data[:,0:2], data[:,2])
-    print('route',route)
+    #print('route',route)
     newData = UpdateData(data, route)
     FinalGaussian = FinalEstimation(g, newData, KernelUpdate(g, data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
 # Create plot of initial Gaussian Regression
