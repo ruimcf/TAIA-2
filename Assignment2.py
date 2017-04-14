@@ -82,12 +82,12 @@ def V(data):
     '''given data points, one can compute the covariance matrix (needs to transpose to get observations through rows and points through columns: '''
     CovarianceMatrix = np.cov(data.T) #or just do np.cov(data, rowvar=False)
     '''kernels functions examples'''
-    #kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
     #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
     #kernel = 1**2*RBF(length_scale = 1) #grade: 1
     #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
     #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
-    kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    #kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
     #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
     #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
     #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
@@ -96,7 +96,7 @@ def V(data):
     #kernel = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
     #kernel = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
     exponent = 2
-    kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
+    #kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     gpr = GaussianProcessRegressor(kernel = kernel)
     gpr.fit(data[:,0:2], data[:,2])
     x1 = np.linspace(0,1.01,100)
@@ -205,7 +205,7 @@ def FreeZonesQuadratic(data, zones):
                 points_in_zone.append(point)
                 break #break the data loop, because this zone cannot be a freeZone
         if points_in_zone == []:
-            print('zone', zone)
+            #print('zone', zone)
             freeZones.append(zone)
         else:
             zones_with_points.append(zone)
@@ -249,7 +249,7 @@ def planner(X, z):
             attractiveness.remove(max(attractiveness))
             newPositions.append(newBestZone.center)
             time = tsp(newPositions)
-            print("Tempo com {} pontos: {}".format(len(newPositions), time))
+            #print("Tempo com {} pontos: {}".format(len(newPositions), time))
             if time > inst.T:
                 #Ultrapassamos o tempo maximo mas podemos tentar com outro valor, talvez mais perto
                 newPositions.remove(newBestZone.center)
@@ -274,66 +274,20 @@ def tsp(points):
         xt, yt = point[0], point[1]
     time += dist(xt, yt, 0, 0)
     return time;
+#------------------------------------------------------
+#Actualizar o Kernel
 
+def Error(F, model, x, y):
+    return abs(F(x,y) - model.predict([x,y]))
 
-if __name__ == "__main__":
-    data = init()
-    route = planner(data[:,0:2], data[:,2])
-
-    #PLOT SPLITZONES:
-    zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])] #initial zone (all the grid)
-    #zones=[zone]
-    PositionsX = []
-    PositionsY = []
-    for i in range(3):
-        zones = splitZones(zones)
-        print('zones',zones)
-        for zone in zones:
-            print('zone',zone)
-            for point in zone.getPoints():
-                PositionsX.append(point[0])
-                PositionsY.append(point[1])
-        plt.plot(PositionsX, PositionsY, 'ro')
-        plt.axis([0, 1, 0, 1])
-        plt.show()
-
-    #PLOT FREEZONESQUADRATIC:
-    import matplotlib.pyplot
-    free1 = []
-    free2 = []
-    zones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
-    freeZones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
-    #zones=[zone]
-    zones = splitZones(zones)
-    print('zones',zones)
-    #print('freezones', FreeZonesQuadratic(data,zones)[0])
-    while FreeZonesQuadratic(data,zones)[0] == []:
-        zones = splitZones(zones)
-        freeZones = FreeZonesQuadratic(data,zones)[0]
-    for freezone in freeZones:
-        print('freezone',freezone)
-        for point in freezone.getPoints():
-            free1.append(point[0])
-            free2.append(point[1])
-    x_axis = np.append(data[:,0], free1)
-    y_axis = np.append(data[:,1], free2)
-    plt.plot(data[:,0], data[:,1],'ro')
-    #matplotlib.pyplot.scatter(free1, free2,color=['green'])
-    plt.plot(free1, free2)
-    plt.axis([0, 1, 0, 1])
-    plt.show()
-
-
-# Create plot of Gaussian Regression
-    fig = plt.figure(figsize=(10,6))
-    fig.suptitle('Gaussian Process Regression', fontsize=20)
-    plt.hold(True)
+def Vtest(data,kernel):
+    '''kernels functions examples'''
     #kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
     #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
     #kernel = 1**2*RBF(length_scale = 1) #grade: 1
     #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
     #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
-    kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    #kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
     #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
     #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
     #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
@@ -341,8 +295,121 @@ if __name__ == "__main__":
     #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
     #kernel = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
     #kernel = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
+    #exponent = 2
+    #kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
+    gpr = GaussianProcessRegressor(kernel = kernel)
+    gpr.fit(data[:,0:2], data[:,2])
+    x1 = np.linspace(0,1.01,100)
+    x2 = np.linspace(0,1.01,100)
+    B1, B2 = np.meshgrid(x1, x2, indexing='xy')
+    Z = np.zeros((x2.size, x1.size))
+    for (i,j),v in np.ndenumerate(Z):
+        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+    return gpr
+
+def KernelUpdate(F, data, kernel):
+    E = []
+    kernels = []
+    avgErrors = []
+    kernel1 = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
+    kernel2 = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
+    kernel3 = 1**2*RBF(length_scale = 1) #grade: 1
+    kernel4 = 0.594**2*RBF(length_scale = 0.279) #grade: 1
+    kernel5 = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
+    kernel6 = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    kernel7 = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
+    kernel8 = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
+    kernel9 = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
+    kernel10 = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: 1
+    kernel11 = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
+    kernel12 = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
+    kernel13 = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
     exponent = 2
-    kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
+    kernel14 = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
+    kernels.append(kernel1)    
+    kernels.append(kernel2)
+    kernels.append(kernel3)
+    kernels.append(kernel4)
+    kernels.append(kernel5)
+    kernels.append(kernel6)
+    kernels.append(kernel7)
+    kernels.append(kernel8)
+    kernels.append(kernel9)
+    kernels.append(kernel10)
+    kernels.append(kernel11)
+    kernels.append(kernel12)
+    kernels.append(kernel13)
+    kernels.append(kernel14)                
+    for kernel in kernels:
+        testModel = Vtest(data,kernel)
+        for point in data:
+            E.append(Error(F, Vtest(data,kernel), point[0], point[1]))
+        avgErrors.append(np.mean(E))
+    print(kernels[avgErrors.index(min(avgErrors))])
+    return kernels[avgErrors.index(min(avgErrors))] #get corresponding kernel
+
+def FinalEstimation(F, data, kernel):
+    for i in range(len(data)):
+        data[i,2] = F(data[i,0],data[i,1])
+        #now data has true values
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+    print('kernel',kernel)
+    gpr = GaussianProcessRegressor(kernel = kernel)
+    gpr.fit(data[:,0:2], data[:,2])
+    x1 = np.linspace(0,1.01,100)
+    x2 = np.linspace(0,1.01,100)
+
+    B1, B2 = np.meshgrid(x1, x2, indexing='xy')
+    Z = np.zeros((x2.size, x1.size))
+    for (i,j),v in np.ndenumerate(Z):
+        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+
+    # Create plot
+    fig = plt.figure(figsize=(10,6))
+    fig.suptitle('Final Gaussian Process Regression with kernel: ' + str(kernel), fontsize=20)
+
+    ax = axes3d.Axes3D(fig)
+
+    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
+    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
+
+    ax.set_xlabel('x')
+    ax.set_xlim(0,1)
+    ax.set_ylabel('y')
+    ax.set_ylim(ymin=0)
+    ax.set_zlabel('z');
+
+    plt.show()
+
+
+    return Z
+
+
+if __name__ == "__main__":
+    data = init()
+    FinalGaussian = FinalEstimation(g, data, KernelUpdate(g, data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
+    route = planner(data[:,0:2], data[:,2])
+# Create plot of initial Gaussian Regression
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    fig = plt.figure(figsize=(10,6))
+    fig.suptitle('Gaussian Process Regression  with kernel: ' + str(kernel), fontsize=20)
+    plt.hold(True)
+     #grade: 7
+    #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
+    #kernel = 1**2*RBF(length_scale = 1) #grade: 1
+    #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
+    #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
+    #kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
+    #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
+    #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
+    #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
+    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: 1
+    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
+    #kernel = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
+    #kernel = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
+    #exponent = 2
+    #kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     gpr = GaussianProcessRegressor(kernel = kernel)
     gpr.fit(data[:,0:2], data[:,2])
     ax = axes3d.Axes3D(fig)
@@ -376,40 +443,47 @@ if __name__ == "__main__":
     plt.axis([0, 1, 0, 1])
     plt.show()
 
-def FinalEstimation(F, data):
-    for i in range(len(data)):
-        data[i,2] = F(data[i,0],data[i,1])
-        #now data has true values
-    from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+'''
+    #PLOT SPLITZONES:
+    zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])] #initial zone (all the grid)
+    #zones=[zone]
+    PositionsX = []
+    PositionsY = []
+    for i in range(3):
+        zones = splitZones(zones)
+        #print('zones',zones)
+        for zone in zones:
+            #print('zone',zone)
+            for point in zone.getPoints():
+                PositionsX.append(point[0])
+                PositionsY.append(point[1])
+        plt.plot(PositionsX, PositionsY, 'ro')
+        plt.axis([0, 1, 0, 1])
+        plt.show()
 
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-    gpr = GaussianProcessRegressor()
-    gpr.fit(data[:,0:2], data[:,2])
-    x1 = np.linspace(0,1.01,100)
-    x2 = np.linspace(0,1.01,100)
-
-    B1, B2 = np.meshgrid(x1, x2, indexing='xy')
-    Z = np.zeros((x2.size, x1.size))
-    for (i,j),v in np.ndenumerate(Z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
-
-    # Create plot
-    fig = plt.figure(figsize=(10,6))
-    fig.suptitle('Gaussian Process Regression', fontsize=20)
-
-    ax = axes3d.Axes3D(fig)
-
-    ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
-    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
-
-    ax.set_xlabel('x')
-    ax.set_xlim(0,1)
-    ax.set_ylabel('y')
-    ax.set_ylim(ymin=0)
-    ax.set_zlabel('z');
-
+    #PLOT FREEZONESQUADRATIC:
+    import matplotlib.pyplot
+    free1 = []
+    free2 = []
+    zones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
+    freeZones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
+    #zones=[zone]
+    zones = splitZones(zones)
+    #print('zones',zones)
+    #print('freezones', FreeZonesQuadratic(data,zones)[0])
+    while FreeZonesQuadratic(data,zones)[0] == []:
+        zones = splitZones(zones)
+        freeZones = FreeZonesQuadratic(data,zones)[0]
+    for freezone in freeZones:
+        #print('freezone',freezone)
+        for point in freezone.getPoints():
+            free1.append(point[0])
+            free2.append(point[1])
+    x_axis = np.append(data[:,0], free1)
+    y_axis = np.append(data[:,1], free2)
+    plt.plot(data[:,0], data[:,1],'ro')
+    #matplotlib.pyplot.scatter(free1, free2,color=['green'])
+    plt.plot(free1, free2)
+    plt.axis([0, 1, 0, 1])
     plt.show()
-
-
-    return Z
+'''
