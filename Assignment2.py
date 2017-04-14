@@ -48,7 +48,7 @@ def dist(x1,y1,x2,y2):
 
 # example function
 def g(x,y):
-    return np.sin(10*(x+y))+random()
+    return np.sin(10*(x+y))
 
 def init():
     #plot function to predict
@@ -105,23 +105,22 @@ def V(data):
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
     Z = np.zeros((x2.size, x1.size))
     for (i,j),v in np.ndenumerate(Z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+        Z[i,j] = gpr.predict(np.asarray([[B1[i,j], B2[i,j]]]).reshape(1, -1))
     return gpr
-
 
 '''h() computes the attractiveness of the central point of a given zone of the map w.r.t. the starting point'''
 ''' it outputs the central point and its value '''
 def h(zone, data, model):
-    Z_pred = model.predict(zone.center) #get predicted value of x from gaussian distribution
+    Z_pred = model.predict(np.asarray(zone.center).reshape(1, -1)) #get predicted value of x from gaussian distribution
     #points that define the zone:
-    Z_pred2 = model.predict(zone.downLeft)
-    Z_pred3 = model.predict(zone.downRight)
-    Z_pred4 = model.predict(zone.upRight)
-    Z_pred5 = model.predict(zone.upLeft)
+    Z_pred2 = model.predict(np.asarray(zone.downLeft).reshape(1, -1))
+    Z_pred3 = model.predict(np.asarray(zone.downRight).reshape(1, -1))
+    Z_pred4 = model.predict(np.asarray(zone.upRight).reshape(1, -1))
+    Z_pred5 = model.predict(np.asarray(zone.upLeft).reshape(1, -1))
     '''compute covariance matrix of 5 points within this region: the points that define the region, and the central point'''
     dataPoints = []
     for point in zone.getPoints():
-        dataPoints.append(point+model.predict(point))
+        dataPoints.append(point+model.predict(np.asarray(point).reshape(1, -1)))
     dataPoints.append(zone.center+Z_pred)#prepare dataPoints for PCA
     CovarianceMatrix = np.cov(np.transpose(np.asarray(dataPoints))) #transposed dataPoints
     eigenValues, eigenVectors = np.linalg.eig(CovarianceMatrix) #get eigenvalues of covariance matrix
@@ -155,23 +154,17 @@ def StopDividing(data,zones):
                 point_in_zone.append(point)
 
         if point_in_zone == []: #if number of points in zone is zero, after all points of data have been tested, then return True
-            #print('zone',zone)
-            #print('stop dividing')
             return True #this means it is OK to stop dividing
-    #print('continue dividing')
     return False #in the end of testing for all zones, since there is none with zero points, then return False (continue dividing)
 
-'''FreeZones(data,zones) returns a list of zones that are free given data and zones'''
 def FreeZones(data,zones):
     freeZones = []
     zones_with_points = []
     nrZones = len(zones)
     zoneSide = 1./math.sqrt(nrZones)
-    '''assign for each point a zone without iterating through each zone: '''
     for point in data:
         x_projection_proportion = point[0]/zoneSide #valor que ajudará a encontrar a posição horizontal da zona do ponto
         y_projection_proportion = point[1]/zoneSide #valor que ajudará a encontrar a posição vertical da zona do ponto
-        #print('number of zones',nrZones)
         for i in range(int(math.sqrt(nrZones))):
             if i < x_projection_proportion and i+1 > x_projection_proportion:
                 for j in range(int(math.sqrt(nrZones))):
@@ -182,13 +175,9 @@ def FreeZones(data,zones):
                         p3 = [(i+1)*zoneSide, (j+1)*zoneSide]
                         p4 = [i*zoneSide, (j+1)*zoneSide]
                         correspondingZone = [p1,p2,p3,p4]
-        #print('point', )
-        #print('corresponding zone',correspondingZone)
         zones_with_points.append(correspondingZone)
-
     for i in zones:
         if i not in zones_with_points:
-            #print('free zone in function',i)
             freeZones.append(i)
     '''if all zones have points, return []'''
     if len(zones_with_points) == len(zones):
@@ -206,7 +195,6 @@ def FreeZonesQuadratic(data, zones):
                 points_in_zone.append(point)
                 break #break the data loop, because this zone cannot be a freeZone
         if points_in_zone == []:
-            #print('zone', zone)
             freeZones.append(zone)
         else:
             zones_with_points.append(zone)
@@ -225,23 +213,18 @@ def planner(X, z):
         data[i,2] = z[i]
         dataPoints.append([x, y])
 
-    #model = V(z)
     model = V(data)
     zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])]
-    #freeZones = FreeZones(zones)[0]
     freeZones = FreeZonesQuadratic(data,zones)[0]
-    newPositions = []
-    profits = []
-    bestZones = []
     #Split the Grid until we have free zones
     while freeZones == []:
         zones = splitZones(zones)
-        #freeZones = FreeZones(zones)[0]
         freeZones = FreeZonesQuadratic(data,zones)[0]
-
     while True:
         attractiveness = []
         bestZones = []
+        newPositions = []
+        print("Nova iteracao")
         for zone in freeZones:
             attractiveness.append(h(zone, data, model))
         for i in range(0, len(attractiveness)):
@@ -249,7 +232,7 @@ def planner(X, z):
             bestZones.append(newBestZone)
             attractiveness.remove(max(attractiveness))
             newPositions.append(newBestZone.center)
-            
+
             route, cost = tsp(newPositions)
             print("Tempo com {} pontos: {}".format(len(newPositions), cost))
             if cost > inst.T:
@@ -281,7 +264,7 @@ def tsp(points):
         route.append(nextPoint)
         cost += dist(currentPoint[0], currentPoint[1], nextPoint[0], nextPoint[1])
         pointsList.remove(nextPoint)
-        nextPoint = currentPoint
+        currentPoint = nextPoint
     route.append([0, 0])
     cost += dist(currentPoint[0], currentPoint[1], 0, 0)
     cost += len(points)
@@ -289,46 +272,17 @@ def tsp(points):
 #------------------------------------------------------
 #Actualizar o Kernel
 
-def Error(F, model, x, y):
-    return abs(F(x,y) - model.predict([x,y]))
+def Error(z, model, x, y):
+    return abs(z - model.predict(np.asarray([x,y]).reshape(1, -1)))
 
 def Vtest(data,kernel):
-    #transformar data num array Data
-    Data = np.zeros((len(data),3))
-    #print('Data',Data)
-    for i in range(len(data)):
-        #print('Data[i,0]',Data[i,0])
-        #print(data)
-        Data[i,0] = data[i][0]
-        Data[i,1] = data[i][1]
-        Data[i,2] = data[i][2]
-    '''kernels functions examples'''
-    #kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)) #grade: 7
-    #kernel = C(constant_value=1.0, constant_value_bounds=(0.0, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.0, 10.0)) + RBF(length_scale=2.0, length_scale_bounds=(0.0, 10.0)) #grade: 5
-    #kernel = 1**2*RBF(length_scale = 1) #grade: 1
-    #kernel = 0.594**2*RBF(length_scale = 0.279) #grade: 1
-    #kernel = 1**2*Matern(length_scale=1,nu=1.5) #grade: 1
-    #kernel = 0.609**2*Matern(length_scale=0.484, nu = 1.5) #grade: 7
-    #kernel = 1**2*RationalQuadratic(alpha=0.1,length_scale=1) #grade: 6
-    #kernel = 0.594**2*RationalQuadratic(alpha=1e+05, length_scale=0.279) #grade 1
-    #kernel = 1**2*ExpSineSquared(length_scale=1,periodicity=3) #grade: 1
-    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: 1
-    #kernel = 0.799**2*ExpSineSquared(length_scale=0.791,periodicity=2.87) #grade: ?? estalactites e estalgmites por todo o lado
-    #kernel = 0.316**2*DotProduct(sigma_0=1)**2 #grade = 4 (pringle shape)
-    #kernel = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
-    #exponent = 2
-    #kernel = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
     gpr = GaussianProcessRegressor(kernel = kernel)
-    gpr.fit(Data[:,0:2], Data[:,2])
-    x1 = np.linspace(0,1.01,100)
-    x2 = np.linspace(0,1.01,100)
-    B1, B2 = np.meshgrid(x1, x2, indexing='xy')
-    Z = np.zeros((x2.size, x1.size))
-    for (i,j),v in np.ndenumerate(Z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+    gpr.fit(data[:,0:2], data[:,2])
     return gpr
 
-def KernelUpdate(F, data, kernel):
+def KernelUpdate(data, kernel):
+    part1 = data[:int(len(data)*0.5),:]
+    part2 = data[int(len(data)*0.5):,:]
     E = []
     kernels = []
     avgErrors = []
@@ -347,7 +301,7 @@ def KernelUpdate(F, data, kernel):
     kernel13 = 0.316**2*DotProduct(sigma_0=0.368)**2 #grade:2 (too simple)
     exponent = 2
     kernel14 = Exponentiation(kernel, exponent) #use in combination with any of previous kernels
-    kernels.append(kernel1)    
+    kernels.append(kernel1)
     kernels.append(kernel2)
     kernels.append(kernel3)
     kernels.append(kernel4)
@@ -360,17 +314,32 @@ def KernelUpdate(F, data, kernel):
     kernels.append(kernel11)
     kernels.append(kernel12)
     kernels.append(kernel13)
-    kernels.append(kernel14)                
+    kernels.append(kernel14)
     for kernel in kernels:
-        testModel = Vtest(data,kernel)
-        for point in data:
-            E.append(Error(F, Vtest(data,kernel), point[0], point[1]))
+        testModel = Vtest(part1, kernel)
+        for point in part2:
+            E.append(Error(point[2], testModel, point[0], point[1]))
         avgErrors.append(np.mean(E))
-    #print(kernels[avgErrors.index(min(avgErrors))])
-    return kernels[avgErrors.index(min(avgErrors))] #get corresponding kernel
+    return kernels[avgErrors.index(min(avgErrors))]
+
+def estimator(X, z, mesh):
+    N=len(X)
+    data = np.zeros((N,3))
+    for i in range(N):
+        x, y = X[i]
+        data[i,0] = x
+        data[i,1] = y
+        data[i,2] = z[i]
+    newKernel = KernelUpdate(data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2)))
+    gpr = GaussianProcessRegressor(kernel = newKernel)
+    gpr.fit(X, z)
+    z = []
+    for (x_,y_) in mesh:
+        GP = gpr.predict(np.asarray([(x_,y_)]).reshape(1, -1))
+        z.append(GP)
+    return z
 
 def FinalEstimation(F, data, kernel):
-    #print('data', data)
     Data = np.zeros((len(data),3))
     for i in range(len(Data)):
         Data[i,0] = data[i][0]
@@ -379,54 +348,67 @@ def FinalEstimation(F, data, kernel):
         #now data has true values
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-    #print('kernel',kernel)
     gpr = GaussianProcessRegressor(kernel = kernel)
     gpr.fit(Data[:,0:2], Data[:,2])
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
-
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
     Z = np.zeros((x2.size, x1.size))
     for (i,j),v in np.ndenumerate(Z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
-
-    # Create plot
+        Z[i,j] = gpr.predict(np.asarray([[B1[i,j], B2[i,j]]]).reshape(1, -1))
     fig = plt.figure(figsize=(10,6))
     fig.suptitle('Final Gaussian Process Regression with kernel: ' + str(kernel), fontsize=20)
-
     ax = axes3d.Axes3D(fig)
-
     ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
     ax.scatter3D(Data[:,0], Data[:,1], Data[:,2], c='r')
-
     ax.set_xlabel('x')
     ax.set_xlim(0,1)
     ax.set_ylabel('y')
     ax.set_ylim(ymin=0)
     ax.set_zlabel('z');
-
     plt.show()
-
-
     return Z
 
 def UpdateData(data, route):
-    newData = []
-    data = data.tolist()
-    for point in data:
-        newData.append([point[0],point[1]])
+    newData = np.copy(data)
     for point in route:
-        newData.append([point[0], point[1]])
-    #print('newData',newData)
+        np.append(newData, [[point[0], point[1], g(point[0], point[1])]], axis=0)
     return newData
 
-if __name__ == "__main__":
-    data = init()
-    route = planner(data[:,0:2], data[:,2])
-    #print('route',route)
-    newData = UpdateData(data, route)
-    FinalGaussian = FinalEstimation(g, newData, KernelUpdate(g, data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
-# Create plot of initial Gaussian Regression
+def plotSplitZones():
+    zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])] #initial zone (all the grid)
+    PositionsX = []
+    PositionsY = []
+    for i in range(3):
+        zones = splitZones(zones)
+        for zone in zones:
+            for point in zone.getPoints():
+                PositionsX.append(point[0])
+                PositionsY.append(point[1])
+        plt.plot(PositionsX, PositionsY, 'ro')
+        plt.axis([0, 1, 0, 1])
+        plt.show()
+    import matplotlib.pyplot
+    free1 = []
+    free2 = []
+    zones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
+    freeZones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
+    zones = splitZones(zones)
+    while FreeZonesQuadratic(data,zones)[0] == []:
+        zones = splitZones(zones)
+        freeZones = FreeZonesQuadratic(data,zones)[0]
+    for freezone in freeZones:
+        for point in freezone.getPoints():
+            free1.append(point[0])
+            free2.append(point[1])
+    x_axis = np.append(data[:,0], free1)
+    y_axis = np.append(data[:,1], free2)
+    plt.plot(data[:,0], data[:,1],'ro')
+    plt.plot(free1, free2)
+    plt.axis([0, 1, 0, 1])
+    plt.show()
+
+def plotKernels():
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     fig = plt.figure(figsize=(10,6))
     fig.suptitle('Gaussian Process Regression  with kernel: ' + str(kernel), fontsize=20)
@@ -454,72 +436,49 @@ if __name__ == "__main__":
     B1, B2 = np.meshgrid(x1, x2, indexing='xy')
     Z = np.zeros((x2.size, x1.size))
     for (i,j),v in np.ndenumerate(Z):
-        Z[i,j] = gpr.predict([[B1[i,j], B2[i,j]]])
+        Z[i,j] = gpr.predict(np.asarray([[B1[i,j], B2[i,j]]]).reshape(1, -1))
     ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
     ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
-
     ax.set_xlabel('x')
     ax.set_xlim(0,1)
     ax.set_ylabel('y')
     ax.set_ylim(ymin=0)
     ax.set_zlabel('z');
 
-
-#plot visited points
+def plotVisitedPoints(route):
     newPositions_x = []
     newPositions_y = []
-    for i in range(len(route)):
-        newPositions_x.append(route[i][0])
-        newPositions_y.append(route[i][1])
-
-    #plt.plot(positions_x, positions_y, 'ro')
-    plt.plot(newPositions_x, newPositions_y, 'ro', c=[1,1,1])
-#ax.scatter3D(newPositions_x, newPositions_y, np.zeros((1,len(newPositions_x))),c='r')
-#plt.plot(newPositions_x, newPositions_y,'ro')
+    for point in route:
+        newPositions_x.append(point[0])
+        newPositions_y.append(point[1])
+    plt.plot(newPositions_x, newPositions_y, 'ro')
     plt.axis([0, 1, 0, 1])
+    plt.title("Visited Points")
     plt.show()
 
-'''
-    #PLOT SPLITZONES:
-    zones = [Zone([0.,0.],[1.,0.],[1.,1.],[0.,1.])] #initial zone (all the grid)
-    #zones=[zone]
-    PositionsX = []
-    PositionsY = []
-    for i in range(3):
-        zones = splitZones(zones)
-        #print('zones',zones)
-        for zone in zones:
-            #print('zone',zone)
-            for point in zone.getPoints():
-                PositionsX.append(point[0])
-                PositionsY.append(point[1])
-        plt.plot(PositionsX, PositionsY, 'ro')
-        plt.axis([0, 1, 0, 1])
-        plt.show()
+def createMesh():
+    mesh = []
+    for i in range(101):
+        for j in range(101):
+            x, y = i/100., j/100.
+            mesh.append((x,y))
+    return mesh
 
-    #PLOT FREEZONESQUADRATIC:
-    import matplotlib.pyplot
-    free1 = []
-    free2 = []
-    zones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
-    freeZones = [Zone([0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.5])]
-    #zones=[zone]
-    zones = splitZones(zones)
-    #print('zones',zones)
-    #print('freezones', FreeZonesQuadratic(data,zones)[0])
-    while FreeZonesQuadratic(data,zones)[0] == []:
-        zones = splitZones(zones)
-        freeZones = FreeZonesQuadratic(data,zones)[0]
-    for freezone in freeZones:
-        #print('freezone',freezone)
-        for point in freezone.getPoints():
-            free1.append(point[0])
-            free2.append(point[1])
-    x_axis = np.append(data[:,0], free1)
-    y_axis = np.append(data[:,1], free2)
-    plt.plot(data[:,0], data[:,1],'ro')
-    #matplotlib.pyplot.scatter(free1, free2,color=['green'])
-    plt.plot(free1, free2)
-    plt.axis([0, 1, 0, 1])
-    plt.show()
-'''
+if __name__ == "__main__":
+    data = init()
+    route = planner(data[:,0:2], data[:,2])
+    print("Route: ",route)
+    newData = UpdateData(data, route)
+    mesh = createMesh()
+    z = estimator(data[:,0:2], data[:,2], mesh)
+    value = 0
+    for i in range(len(mesh)):
+        (x, y) = mesh[i]
+        value += abs(g(x,y) - float(z[i]))
+    print(value)
+
+    plotKernels()
+    iinalGaussian = FinalEstimation(g, newData, KernelUpdate(newData, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
+    plotVisitedPoints(route)
+
+
