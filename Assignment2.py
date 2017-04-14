@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic,ExpSineSquared, DotProduct, Exponentiation, ConstantKernel as C
-import christofides
+
 
 # object for keeping instance data
 class INST:
@@ -361,14 +361,18 @@ def KernelUpdate(F, data, kernel):
     return kernels[avgErrors.index(min(avgErrors))] #get corresponding kernel
 
 def FinalEstimation(F, data, kernel):
-    for i in range(len(data)):
-        data[i,2] = F(data[i,0],data[i,1])
+    print('data', data)
+    Data = np.zeros((len(data),3))
+    for i in range(len(Data)):
+        Data[i,0] = data[i][0]
+        Data[i,1] = data[i][1]
+        Data[i,2] = F(data[i][0],data[i][1])
         #now data has true values
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
     print('kernel',kernel)
     gpr = GaussianProcessRegressor(kernel = kernel)
-    gpr.fit(data[:,0:2], data[:,2])
+    gpr.fit(Data[:,0:2], Data[:,2])
     x1 = np.linspace(0,1.01,100)
     x2 = np.linspace(0,1.01,100)
 
@@ -384,7 +388,7 @@ def FinalEstimation(F, data, kernel):
     ax = axes3d.Axes3D(fig)
 
     ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
-    ax.scatter3D(data[:,0], data[:,1], data[:,2], c='r')
+    ax.scatter3D(Data[:,0], Data[:,1], Data[:,2], c='r')
 
     ax.set_xlabel('x')
     ax.set_xlim(0,1)
@@ -397,11 +401,18 @@ def FinalEstimation(F, data, kernel):
 
     return Z
 
+def UpdateData(data, route):
+    newData = []
+    for point in route:
+        newData.append([point[0], point[1]])
+    return newData
 
 if __name__ == "__main__":
     data = init()
-    FinalGaussian = FinalEstimation(g, data, KernelUpdate(g, data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
     route = planner(data[:,0:2], data[:,2])
+    print('route',route)
+    newData = UpdateData(data, route)
+    FinalGaussian = FinalEstimation(g, newData, KernelUpdate(g, data, C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))))
 # Create plot of initial Gaussian Regression
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     fig = plt.figure(figsize=(10,6))
