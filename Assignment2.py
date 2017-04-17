@@ -49,6 +49,8 @@ def dist(x1,y1,x2,y2):
 # example function
 def g(x,y):
     return np.sin(10*(x+y))
+#def g(x,y):
+#    return np.sin(20*x)+np.cos(20*y)
 
 def init():
     #plot function to predict
@@ -369,7 +371,9 @@ def FinalEstimation(F, data, kernel):
 def UpdateData(data, route):
     newData = np.copy(data)
     for point in route:
-        np.append(newData, [[point[0], point[1], g(point[0], point[1])]], axis=0)
+        newData = np.append(newData, [[point[0], point[1], g(point[0], point[1])]], axis=0)
+        #print('appended point in data', point)
+    #print('newData inside UpdateData', newData)
     return newData
 
 def plotSplitZones():
@@ -441,6 +445,7 @@ def plotKernels():
     ax.set_ylabel('y')
     ax.set_ylim(ymin=0)
     ax.set_zlabel('z');
+    plt.show()
 
 def plotVisitedPoints(route):
     newPositions_x = []
@@ -466,6 +471,8 @@ if __name__ == "__main__":
     route = planner(data[:,0:2], data[:,2])
     print("Route: ",route)
     newData = UpdateData(data, route)
+    #print('data', data)
+    #print('newData',newData)
     mesh = createMesh()
     z = estimator(data[:,0:2], data[:,2], mesh)
     value = 0
