@@ -453,7 +453,7 @@ def plotVisitedPoints(route):
     for point in route:
         newPositions_x.append(point[0])
         newPositions_y.append(point[1])
-    plt.plot(newPositions_x, newPositions_y, 'ro', c=[1,1,1])
+    plt.plot(newPositions_x, newPositions_y, 'ro', c='r')
     plt.axis([0, 1, 0, 1])
     plt.title("Visited Points")
     plt.show()
@@ -469,6 +469,7 @@ def createMesh():
 if __name__ == "__main__":
     data = init()
     route = planner(data[:,0:2], data[:,2])
+    plotVisitedPoints(route)
     print("Route: ",route)
     newData = UpdateData(data, route)
     #print('data', data)
@@ -483,6 +484,6 @@ if __name__ == "__main__":
 
     plotKernels()
     iinalGaussian = FinalEstimation(g, newData, KernelUpdate(newData))
-    plotVisitedPoints(route)
+    
 
 
